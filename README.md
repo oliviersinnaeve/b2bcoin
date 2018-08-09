@@ -1,10 +1,5 @@
 # B2BCoin
 
-[![N|Solid](https://b2bcoin.xyz/images/B2Bweb-icon-logo.svg)](https://b2bcoin.xyz)
-
-![alt text][logo]
-[logo]: https://b2bcoin.xyz/images/B2Bweb-icon-logo.svg "B2Bcoin"
-
 ![alt text](https://b2bcoin.xyz/images/B2Bweb-icon-logo.svg "B2Bcoin")
 
 -= Building B2BCoin =-
