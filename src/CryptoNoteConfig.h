@@ -43,12 +43,12 @@ const uint32_t KILL_HEIGHT                          = 0;
 const uint64_t TAIL_EMISSION_REWARD                          = 0;
 const size_t CRYPTONOTE_COIN_VERSION                          = 0;
 const uint32_t ZAWY_DIFFICULTY_BLOCK_INDEX                 = 94175;
-const uint32_t ZAWY_DIFFICULTY_LAST_BLOCK                 = 0;
+const uint32_t ZAWY_DIFFICULTY_LAST_BLOCK                 = 235949;
 const uint64_t ZAWY_DIFFICULTY_MIN                 = 1;
-const uint32_t ZAWY_LWMA_DIFFICULTY_BLOCK_INDEX                 = 0;
+const uint32_t ZAWY_LWMA_DIFFICULTY_BLOCK_INDEX                 = 235950;
 const uint32_t ZAWY_LWMA_DIFFICULTY_LAST_BLOCK                 = 0;
 const uint64_t ZAWY_LWMA_DIFFICULTY_MIN                 = 1;
-const size_t ZAWY_LWMA_DIFFICULTY_N                 = 0;
+const size_t ZAWY_LWMA_DIFFICULTY_N                 = 60;
 const uint32_t ZAWY_LWMA2_DIFFICULTY_BLOCK_INDEX                 = 0;
 const uint32_t ZAWY_LWMA2_DIFFICULTY_LAST_BLOCK                 = 0;
 const uint64_t ZAWY_LWMA2_DIFFICULTY_MIN                 = 1;
@@ -154,7 +154,7 @@ const uint32_t  P2P_IDLE_CONNECTION_KILL_INTERVAL               = (5*60); //5 mi
 
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "";
 
-const char* const SEED_NODES[] = { "144.217.87.79:39155", "168.235.102.154:39155" };
+const char* const SEED_NODES[] = { "144.217.87.79:39155", "168.235.102.154:39155", "194.32.76.162:39155" };
 
 
 struct CheckpointData {
