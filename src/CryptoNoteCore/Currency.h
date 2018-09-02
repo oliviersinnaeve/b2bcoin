@@ -62,6 +62,10 @@ public:
   uint32_t zawyLWMADifficultyLastBlock() const { return m_zawyLWMADifficultyLastBlock; }
   uint64_t zawyLWMADifficultyMin() const { return m_zawyLWMADifficultyMin; }
   size_t zawyLWMADifficultyN() const { return m_zawyLWMADifficultyN; }
+  uint32_t zawyLWMAfixDifficultyBlockIndex() const { return m_zawyLWMAfixDifficultyBlockIndex; }
+  uint32_t zawyLWMAfixDifficultyLastBlock() const { return m_zawyLWMAfixDifficultyLastBlock; }
+  uint64_t zawyLWMAfixDifficultyMin() const { return m_zawyLWMAfixDifficultyMin; }
+  size_t zawyLWMAfixDifficultyN() const { return m_zawyLWMAfixDifficultyN; }
   uint32_t zawyLWMA2DifficultyBlockIndex() const { return m_zawyLWMA2DifficultyBlockIndex; }
   uint32_t zawyLWMA2DifficultyLastBlock() const { return m_zawyLWMA2DifficultyLastBlock; }
   uint64_t zawyLWMA2DifficultyMin() const { return m_zawyLWMA2DifficultyMin; }
@@ -143,11 +147,12 @@ size_t difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion) const;
   bool parseAmount(const std::string& str, uint64_t& amount) const;
 
   Difficulty nextDifficulty(std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-Difficulty nextDifficultyZawyLWMA2(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-Difficulty nextDifficultyZawyLWMA(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-Difficulty nextDifficultyZawyV1(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-Difficulty nextDifficulty(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-Difficulty nextDifficultyDefault(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyZawyLWMA2(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyZawyLWMAfix(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyZawyLWMA(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyZawyV1(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficulty(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyDefault(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
 
   bool checkProofOfWorkV1(Crypto::cn_context& context, const CachedBlock& block, Difficulty currentDifficulty) const;
   bool checkProofOfWorkV2(Crypto::cn_context& context, const CachedBlock& block, Difficulty currentDifficulty) const;
@@ -194,6 +199,10 @@ private:
   uint32_t m_zawyLWMADifficultyLastBlock;
   uint64_t m_zawyLWMADifficultyMin;
   size_t m_zawyLWMADifficultyN;
+  uint32_t m_zawyLWMAfixDifficultyBlockIndex;
+  uint32_t m_zawyLWMAfixDifficultyLastBlock;
+  uint64_t m_zawyLWMAfixDifficultyMin;
+  size_t m_zawyLWMAfixDifficultyN;
   uint32_t m_zawyLWMA2DifficultyBlockIndex;
   uint32_t m_zawyLWMA2DifficultyLastBlock;
   uint64_t m_zawyLWMA2DifficultyMin;
@@ -231,6 +240,7 @@ private:
 
   uint32_t m_upgradeHeightV2;
   uint32_t m_upgradeHeightV3;
+  uint32_t m_upgradeHeightV4;
   unsigned int m_upgradeVotingThreshold;
   uint32_t m_upgradeVotingWindow;
   uint32_t m_upgradeWindow;
@@ -294,6 +304,10 @@ public:
   CurrencyBuilder& zawyLWMADifficultyLastBlock(uint32_t val) { m_currency.m_zawyLWMADifficultyLastBlock = val; return *this; }
   CurrencyBuilder& zawyLWMADifficultyMin(uint64_t val) { m_currency.m_zawyLWMADifficultyMin = val; return *this; }
   CurrencyBuilder& zawyLWMADifficultyN(size_t val) { m_currency.m_zawyLWMADifficultyN = val; return *this; }
+  CurrencyBuilder& zawyLWMAfixDifficultyBlockIndex(uint32_t val) { m_currency.m_zawyLWMAfixDifficultyBlockIndex = val; return *this; }
+  CurrencyBuilder& zawyLWMAfixDifficultyLastBlock(uint32_t val) { m_currency.m_zawyLWMAfixDifficultyLastBlock = val; return *this; }
+  CurrencyBuilder& zawyLWMAfixDifficultyMin(uint64_t val) { m_currency.m_zawyLWMAfixDifficultyMin = val; return *this; }
+  CurrencyBuilder& zawyLWMAfixDifficultyN(size_t val) { m_currency.m_zawyLWMAfixDifficultyN = val; return *this; }
   CurrencyBuilder& zawyLWMA2DifficultyBlockIndex(uint32_t val) { m_currency.m_zawyLWMA2DifficultyBlockIndex = val; return *this; }
   CurrencyBuilder& zawyLWMA2DifficultyLastBlock(uint32_t val) { m_currency.m_zawyLWMA2DifficultyLastBlock = val; return *this; }
   CurrencyBuilder& zawyLWMA2DifficultyMin(uint64_t val) { m_currency.m_zawyLWMA2DifficultyMin = val; return *this; }
@@ -330,6 +344,7 @@ public:
 
   CurrencyBuilder& upgradeHeightV2(uint32_t val) { m_currency.m_upgradeHeightV2 = val; return *this; }
   CurrencyBuilder& upgradeHeightV3(uint32_t val) { m_currency.m_upgradeHeightV3 = val; return *this; }
+  CurrencyBuilder& upgradeHeightV4(uint32_t val) { m_currency.m_upgradeHeightV4 = val; return *this; }
   CurrencyBuilder& upgradeVotingThreshold(unsigned int val);
   CurrencyBuilder& upgradeVotingWindow(uint32_t val) { m_currency.m_upgradeVotingWindow = val; return *this; }
   CurrencyBuilder& upgradeWindow(uint32_t val);

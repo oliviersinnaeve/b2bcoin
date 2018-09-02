@@ -78,6 +78,7 @@ bool Currency::init() {
   if (isTestnet()) {
     m_upgradeHeightV2 = 0;
     m_upgradeHeightV3 = static_cast<uint32_t>(-1);
+    m_upgradeHeightV4 = 0;
     m_blocksFileName = "testnet_" + m_blocksFileName;
     m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
     m_txPoolFileName = "testnet_" + m_txPoolFileName;
@@ -121,8 +122,10 @@ bool Currency::generateGenesisBlock() {
 }
 
 size_t Currency::difficultyWindowByBlockVersion(uint8_t blockMajorVersion) const {
-  if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
-    return m_difficultyWindow;
+  if (blockMajorVersion >= BLOCK_MAJOR_VERSION_4) {
+    return CryptoNote::parameters::DIFFICULTY_WINDOW_V4;  
+  } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_3) {
+    return CryptoNote::parameters::DIFFICULTY_WINDOW_V3;
   } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
     return CryptoNote::parameters::DIFFICULTY_WINDOW_V2;
   } else {
@@ -151,7 +154,11 @@ size_t Currency::difficultyCutByBlockVersion(uint8_t blockMajorVersion) const {
 }
 
 size_t Currency::difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion) const {
-  return difficultyWindowByBlockVersion(blockMajorVersion) + difficultyLagByBlockVersion(blockMajorVersion);
+  if (blockMajorVersion >= BLOCK_MAJOR_VERSION_4) {
+    return difficultyWindowByBlockVersion(blockMajorVersion);
+  } else {
+    return difficultyWindowByBlockVersion(blockMajorVersion) + difficultyLagByBlockVersion(blockMajorVersion);
+  }
 }
 
 size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
@@ -169,6 +176,8 @@ uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
     return m_upgradeHeightV2;
   } else if (majorVersion == BLOCK_MAJOR_VERSION_3) {
     return m_upgradeHeightV3;
+  } else if (majorVersion == BLOCK_MAJOR_VERSION_4) {
+    return m_upgradeHeightV4;
   } else {
     return static_cast<uint32_t>(-1);
   }
@@ -499,6 +508,9 @@ Difficulty Currency::nextDifficulty(uint8_t version, uint32_t blockIndex, std::v
   if (m_zawyLWMADifficultyBlockIndex && m_zawyLWMADifficultyBlockIndex <= blockIndex && (m_zawyLWMADifficultyLastBlock == 0 || m_zawyLWMADifficultyLastBlock >= blockIndex)) {
     return nextDifficultyZawyLWMA(version, blockIndex, timestamps, cumulativeDifficulties);
 }
+  if (m_zawyLWMAfixDifficultyBlockIndex && m_zawyLWMAfixDifficultyBlockIndex <= blockIndex && (m_zawyLWMAfixDifficultyLastBlock == 0 || m_zawyLWMAfixDifficultyLastBlock >= blockIndex)) {
+    return nextDifficultyZawyLWMAfix(version, blockIndex, timestamps, cumulativeDifficulties);
+}
   if (m_zawyLWMA2DifficultyBlockIndex && m_zawyLWMA2DifficultyBlockIndex <= blockIndex && (m_zawyLWMA2DifficultyLastBlock == 0 || m_zawyLWMA2DifficultyLastBlock >= blockIndex)) {
     return nextDifficultyZawyLWMA2(version, blockIndex, timestamps, cumulativeDifficulties);
 }
@@ -623,6 +635,72 @@ Difficulty Currency::nextDifficultyZawyLWMA(uint8_t version, uint32_t blockIndex
     // minimum limit
     if (next_difficulty < m_zawyLWMADifficultyMin) {
       next_difficulty = m_zawyLWMADifficultyMin;
+    }
+
+    return next_difficulty;
+}
+
+Difficulty Currency::nextDifficultyZawyLWMAfix(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps,
+  std::vector<Difficulty> cumulativeDifficulties) const {
+    // LWMA difficulty algorithm
+    // Copyright (c) 2017-2018 Zawy
+    // MIT license http://www.opensource.org/licenses/mit-license.php.
+    // This is an improved version of Tom Harding's (Deger8) "WT-144"  
+    // Karbowanec, Masari, Bitcoin Gold, and Bitcoin Cash have contributed.
+    // See https://github.com/zawy12/difficulty-algorithms/issues/1 for other algos.
+    // Do not use "if solvetime < 0 then solvetime = 1" which allows a catastrophic exploit.
+    // T= target_solvetime;
+    // N = int(45 * (600 / T) ^ 0.3));
+    //
+    // You can manually assign N: ZAWY_LWMA_DIFFICULTY_N
+
+    const int64_t T = static_cast<int64_t>(m_difficultyTarget);
+    const size_t N = m_zawyLWMAfixDifficultyN - 1;
+
+    // Hardcode difficulty for 60 blocks after fork height 
+    if (blockIndex >= m_zawyLWMAfixDifficultyBlockIndex && blockIndex <= m_zawyLWMAfixDifficultyBlockIndex + N) {
+      return 50000000;
+    }
+
+    if (timestamps.size() > N + 1) {
+      timestamps.resize(N + 1);
+      cumulativeDifficulties.resize(N + 1);
+    }
+    size_t n = timestamps.size();
+    assert(n == cumulativeDifficulties.size());
+    assert(n <= m_zawyLWMAfixDifficultyN);
+    if (n <= 2)
+      return 1;
+    if (n < (N + 1)) 
+      return m_zawyLWMAfixDifficultyMin;
+    // To get an average solvetime to within +/- ~0.1%, use an adjustment factor.
+    const double_t adjust = 0.998;
+    // The divisor k normalizes LWMA.
+    const double_t k = N * (N + 1) / 2;
+
+    double_t LWMA(0), sum_inverse_D(0), harmonic_mean_D(0), nextDifficulty(0);
+    int64_t solveTime(0);
+    uint64_t difficulty(0), next_difficulty(0);
+
+    // Loop through N most recent blocks.
+    for (int64_t i = 1; i <= (int64_t)N; i++) {
+      solveTime = static_cast<int64_t>(timestamps[i]) - static_cast<int64_t>(timestamps[i - 1]);
+      solveTime = std::min<int64_t>((T * 7), std::max<int64_t>(solveTime, (-6 * T)));
+      difficulty = cumulativeDifficulties[i] - cumulativeDifficulties[i - 1];
+      LWMA += solveTime * i / k;
+      sum_inverse_D += 1 / static_cast<double_t>(difficulty);
+    }
+
+    // Keep LWMA sane in case something unforeseen occurs.
+    if (static_cast<int64_t>(std::round(LWMA)) < T / 20)
+      LWMA = static_cast<double_t>(T / 20);
+      harmonic_mean_D = N / sum_inverse_D * adjust;
+      nextDifficulty = harmonic_mean_D * T / LWMA;
+      next_difficulty = static_cast<uint64_t>(nextDifficulty);
+    
+    // minimum limit
+    if (next_difficulty < m_zawyLWMAfixDifficultyMin) {
+      next_difficulty = m_zawyLWMAfixDifficultyMin;
     }
 
     return next_difficulty;
@@ -835,6 +913,7 @@ bool Currency::checkProofOfWork(Crypto::cn_context& context, const CachedBlock& 
 
   case BLOCK_MAJOR_VERSION_2:
   case BLOCK_MAJOR_VERSION_3:
+  case BLOCK_MAJOR_VERSION_4:
     return checkProofOfWorkV2(context, block, currentDiffic);
   }
 
@@ -900,6 +979,7 @@ m_fusionTxMinInputCount(currency.m_fusionTxMinInputCount),
 m_fusionTxMinInOutCountRatio(currency.m_fusionTxMinInOutCountRatio),
 m_upgradeHeightV2(currency.m_upgradeHeightV2),
 m_upgradeHeightV3(currency.m_upgradeHeightV3),
+m_upgradeHeightV4(currency.m_upgradeHeightV4),
 m_upgradeVotingThreshold(currency.m_upgradeVotingThreshold),
 m_upgradeVotingWindow(currency.m_upgradeVotingWindow),
 m_upgradeWindow(currency.m_upgradeWindow),
@@ -921,6 +1001,10 @@ m_zawyLWMADifficultyBlockIndex(currency.m_zawyLWMADifficultyBlockIndex),
 m_zawyLWMADifficultyLastBlock(currency.m_zawyLWMADifficultyLastBlock),
 m_zawyLWMADifficultyMin(currency.m_zawyLWMADifficultyMin),
 m_zawyLWMADifficultyN(currency.m_zawyLWMADifficultyN),
+m_zawyLWMAfixDifficultyBlockIndex(currency.m_zawyLWMAfixDifficultyBlockIndex),
+m_zawyLWMAfixDifficultyLastBlock(currency.m_zawyLWMAfixDifficultyLastBlock),
+m_zawyLWMAfixDifficultyMin(currency.m_zawyLWMAfixDifficultyMin),
+m_zawyLWMAfixDifficultyN(currency.m_zawyLWMAfixDifficultyN),
 m_zawyLWMA2DifficultyBlockIndex(currency.m_zawyLWMA2DifficultyBlockIndex),
 m_zawyLWMA2DifficultyLastBlock(currency.m_zawyLWMA2DifficultyLastBlock),
 m_zawyLWMA2DifficultyMin(currency.m_zawyLWMA2DifficultyMin),
@@ -961,6 +1045,10 @@ zawyLWMADifficultyBlockIndex(parameters::ZAWY_LWMA_DIFFICULTY_BLOCK_INDEX);
 zawyLWMADifficultyLastBlock(parameters::ZAWY_LWMA_DIFFICULTY_LAST_BLOCK);
 zawyLWMADifficultyMin(parameters::ZAWY_LWMA_DIFFICULTY_MIN);
 zawyLWMADifficultyN(parameters::ZAWY_LWMA_DIFFICULTY_N);
+zawyLWMAfixDifficultyBlockIndex(parameters::ZAWY_LWMA_FIX_DIFFICULTY_BLOCK_INDEX);
+zawyLWMAfixDifficultyLastBlock(parameters::ZAWY_LWMA_FIX_DIFFICULTY_LAST_BLOCK);
+zawyLWMAfixDifficultyMin(parameters::ZAWY_LWMA_FIX_DIFFICULTY_MIN);
+zawyLWMAfixDifficultyN(parameters::ZAWY_LWMA_FIX_DIFFICULTY_N);
 zawyLWMA2DifficultyBlockIndex(parameters::ZAWY_LWMA2_DIFFICULTY_BLOCK_INDEX);
 zawyLWMA2DifficultyLastBlock(parameters::ZAWY_LWMA2_DIFFICULTY_LAST_BLOCK);
 zawyLWMA2DifficultyMin(parameters::ZAWY_LWMA2_DIFFICULTY_MIN);
@@ -998,6 +1086,7 @@ fusionTxMaxSize(parameters::MAX_TRANSACTION_SIZE_LIMIT * 30 / 100);
 
   upgradeHeightV2(parameters::UPGRADE_HEIGHT_V2);
   upgradeHeightV3(parameters::UPGRADE_HEIGHT_V3);
+  upgradeHeightV4(parameters::UPGRADE_HEIGHT_V4);
   upgradeVotingThreshold(parameters::UPGRADE_VOTING_THRESHOLD);
   upgradeVotingWindow(parameters::UPGRADE_VOTING_WINDOW);
   upgradeWindow(parameters::UPGRADE_WINDOW);
