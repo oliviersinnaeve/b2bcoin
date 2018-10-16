@@ -538,7 +538,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
 			 "  `---  /oo-                 +oo | https://forum.b2bcoin.xyz/index.php               |\n"
 			 "  ---` -oo/  --------------  +oo | https://github.com/oliviersinnaeve                |\n"
 			 " .--. .ooo` ``````````````  /oo: |                                                   |\n"
-			 "`---  +oo+::::::::::::::::+ooo:  | Exchanges: Stocks, MapleChange, Altex             |\n"
+			 "`---  +oo+::::::::::::::::+ooo:  | Exchanges: STEX, MapleChange, FirstCryptoBank     |\n"
 			 "---` :ooooooooooooooooooooo+:`   | Coming soon: Meroex.com !!!                       |\n"
 			 " ____ _________________________________     ____ ____________________________________ \n"
 			 "||G |||Generate a new B2B wallet file ||   ||I |||Create a new B2B wallet file from ||\n"

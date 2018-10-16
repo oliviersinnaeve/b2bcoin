@@ -173,10 +173,7 @@ void WalletLegacy::initWithKeys(const AccountKeys& accountKeys, const std::strin
     }
 
     m_account.setAccountKeys(accountKeys);
-  uint64_t createTime = ACCOUN_CREATE_TIME_ACCURACY;
-  if (m_syncAll == 1)
-    createTime = 0;
-  m_account.set_createtime(createTime);
+    m_account.set_createtime(ACCOUN_CREATE_TIME_ACCURACY);
     m_password = password;
 
     initSync();
