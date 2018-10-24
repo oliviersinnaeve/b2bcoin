@@ -476,7 +476,10 @@ simple_wallet::simple_wallet(System::Dispatcher& dispatcher, const CryptoNote::C
   //m_consoleHandler.setHandler("start_mining", boost::bind(&simple_wallet::start_mining, this, _1), "start_mining [<number_of_threads>] - Start mining in daemon");
   //m_consoleHandler.setHandler("stop_mining", boost::bind(&simple_wallet::stop_mining, this, _1), "Stop mining in daemon");
   //m_consoleHandler.setHandler("refresh", boost::bind(&simple_wallet::refresh, this, _1), "Resynchronize transactions and balance");
-  m_consoleHandler.setHandler("export_keys", boost::bind(&simple_wallet::export_keys, this, _1), "Show the secret keys of the openned B2B wallet");
+  m_consoleHandler.setHandler("export_keys", boost::bind(&simple_wallet::export_keys, this, _1), "Show all the secret keys of the openned B2B wallet");
+  m_consoleHandler.setHandler("export_cli_key", boost::bind(&simple_wallet::export_cli_key, this, _1), "Show the secret keys for the CLI wallet");
+  m_consoleHandler.setHandler("export_gui_key", boost::bind(&simple_wallet::export_gui_key, this, _1), "Show the secret key for the GUI wallet");
+  m_consoleHandler.setHandler("export_tracking_key", boost::bind(&simple_wallet::export_tracking_key, this, _1), "Show the public key for the GUI wallet, you can share this with anyone and they can see you balance but not spend it.");
   m_consoleHandler.setHandler("balance", boost::bind(&simple_wallet::show_balance, this, _1), "Show the current B2B wallet balance");
   m_consoleHandler.setHandler("incoming_transfers", boost::bind(&simple_wallet::show_incoming_transfers, this, _1), "Show incoming transfers");
   m_consoleHandler.setHandler("list_transfers", boost::bind(&simple_wallet::listTransfers, this, _1), "Show all known transfers");
@@ -672,12 +675,12 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     std::string private_spend_key_string;
     std::string private_view_key_string;
     do {
-      std::cout << "Private Spend Key: ";
+      std::cout << "Secret Spend Key: ";
       std::getline(std::cin, private_spend_key_string);
       boost::algorithm::trim(private_spend_key_string);
     } while (private_spend_key_string.empty());
     do {
-      std::cout << "Private View Key: ";
+      std::cout << "Secret View Key: ";
       std::getline(std::cin, private_view_key_string);
       boost::algorithm::trim(private_view_key_string);
     } while (private_view_key_string.empty());
@@ -1031,9 +1034,59 @@ void simple_wallet::synchronizationProgressUpdated(uint32_t current, uint32_t to
 bool simple_wallet::export_keys(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
   AccountKeys keys;
   m_wallet->getAccountKeys(keys);
-  success_msg_writer(true) << "Secret Spend key: " << Common::podToHex(keys.spendSecretKey);
-  success_msg_writer(true) << "Secret View key:  " <<  Common::podToHex(keys.viewSecretKey);
+  success_msg_writer(true) << "\n\nAddress:\n" << m_wallet->getAddress() << "\n";
+  success_msg_writer(true) << 
+  "\n\n--------------------------- CLI KEYS ---------------------------\nSecret Spend Key:\n" << 
+  Common::podToHex(keys.spendSecretKey) << 
+  "\nSecret View Key:\n" << 
+  Common::podToHex(keys.viewSecretKey) << 
+  "\n\n\n--------------------------- GUI KEY ----------------------------\nSecret GUI Key:\n" << 
+  Common::podToHex(keys.address.spendPublicKey) << "\n" << 
+  Common::podToHex(keys.address.viewPublicKey) << "\n" << 
+  Common::podToHex(keys.spendSecretKey) << "\n" << 
+  Common::podToHex(keys.viewSecretKey) << 
+  "\n----------------------------------------------------------------\n\n";
+  return true;
+}
 
+bool simple_wallet::export_cli_key(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
+  AccountKeys keys;
+  m_wallet->getAccountKeys(keys);
+  success_msg_writer(true) << "\n\nAddress:\n" << m_wallet->getAddress() << "\n";
+  success_msg_writer(true) << 
+  "\n\n--------------------------- CLI KEYS ---------------------------\nSecret Spend Key:\n" << 
+  Common::podToHex(keys.spendSecretKey) << 
+  "\nSecret View Key:\n" << 
+  Common::podToHex(keys.viewSecretKey) << 
+  "\n----------------------------------------------------------------\n\n";
+  return true;
+}
+
+bool simple_wallet::export_gui_key(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
+  AccountKeys keys;
+  m_wallet->getAccountKeys(keys);
+  success_msg_writer(true) << "\n\nAddress:\n" << m_wallet->getAddress() << "\n";
+  success_msg_writer(true) << 
+  "\n\n--------------------------- GUI KEY ----------------------------\nSecret GUI Key:\n" << 
+  Common::podToHex(keys.address.spendPublicKey) << "\n" << 
+  Common::podToHex(keys.address.viewPublicKey) << "\n" << 
+  Common::podToHex(keys.spendSecretKey) << "\n" << 
+  Common::podToHex(keys.viewSecretKey) << 
+  "\n----------------------------------------------------------------\n\n";
+  return true;
+}
+
+bool simple_wallet::export_tracking_key(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
+  AccountKeys keys;
+  m_wallet->getAccountKeys(keys);
+  success_msg_writer(true) << "\n\nAddress:\n" << m_wallet->getAddress() << "\n";
+  success_msg_writer(true) << 
+  "\n\n----------------------- GUI TRACKING KEY -----------------------\nPublic GUI Tracking Key:\n" << 
+  Common::podToHex(keys.address.spendPublicKey) << "\n" << 
+  Common::podToHex(keys.address.viewPublicKey) << 
+  "\n0000000000000000000000000000000000000000000000000000000000000000\n" << 
+  Common::podToHex(keys.viewSecretKey) << 
+  "\n----------------------------------------------------------------\n\n";
   return true;
 }
 
