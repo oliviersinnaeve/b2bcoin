@@ -178,6 +178,8 @@ const std::initializer_list<CheckpointData> CHECKPOINTS = {
   {10000, "36b4144839124eb86a4656cb4ba97fd98a616a493f98a32ccd377bd0c55e85f3"}
 , {100000, "fe4ddb36465bd3d3c734c5982b1f6e7f7bb4ec82a9c7516fde6e3a383d347c82"} // Make sure we are on correct blockchain after adding ZAWY
 , {240000, "0255e18eaad41f16179ff5a7a5395779d4cbbffe8c99ff5db431b35530434cba"} // Make sure we are on correct blockchain after adding LWMA
+, {250000, "32c363ff7631afb6c78ee9e7dd74d2ad58375b72779a52af810f048b42be4397"} // Make sure we are on correct blockchain after adding fixes to LWMA
+, {280000, "55e0b3154fde56ac15a1efc0c5dfaad6d5c20dac9c57fee9468b56b7d4ff0e59"} // Just for faster sync...
 };
 
 } // CryptoNote

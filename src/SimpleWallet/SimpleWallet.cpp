@@ -481,9 +481,11 @@ simple_wallet::simple_wallet(System::Dispatcher& dispatcher, const CryptoNote::C
   m_consoleHandler.setHandler("export_gui_key", boost::bind(&simple_wallet::export_gui_key, this, _1), "Show the secret key for the GUI wallet");
   m_consoleHandler.setHandler("export_tracking_key", boost::bind(&simple_wallet::export_tracking_key, this, _1), "Show the public key for the GUI wallet, you can share this with anyone and they can see you balance but not spend it.");
   m_consoleHandler.setHandler("balance", boost::bind(&simple_wallet::show_balance, this, _1), "Show the current B2B wallet balance");
-  m_consoleHandler.setHandler("incoming_transfers", boost::bind(&simple_wallet::show_incoming_transfers, this, _1), "Show incoming transfers");
-  m_consoleHandler.setHandler("list_transfers", boost::bind(&simple_wallet::listTransfers, this, _1), "Show all known transfers");
+  m_consoleHandler.setHandler("list_incoming_transfers", boost::bind(&simple_wallet::show_incoming_transfers, this, _1), "Show all incoming transfers");
+  m_consoleHandler.setHandler("list_outgoing_transfers", boost::bind(&simple_wallet::show_outgoing_transfers, this, _1), "Show all outgoing transfers");
+  m_consoleHandler.setHandler("list_all_transfers", boost::bind(&simple_wallet::listTransfers, this, _1), "Show all known transfers to and from the wallet");
   m_consoleHandler.setHandler("payments", boost::bind(&simple_wallet::show_payments, this, _1), "payments <payment_id_1> [<payment_id_2> ... <payment_id_N>] - Show payments <payment_id_1>, ... <payment_id_N>");
+  m_consoleHandler.setHandler("generate_payment_id", boost::bind(&simple_wallet::generate_payment_id, this, _1), "Generate a random Payment ID");
   m_consoleHandler.setHandler("bc_height", boost::bind(&simple_wallet::show_blockchain_height, this, _1), "Show the B2B blockchain height");
   m_consoleHandler.setHandler("transfer", boost::bind(&simple_wallet::transfer, this, _1),
     "transfer <mixin_count> <addr_1> <amount_1> [<addr_2> <amount_2> ... <addr_N> <amount_N>] [-p payment_id] [-f fee]"
@@ -1105,12 +1107,32 @@ bool simple_wallet::show_incoming_transfers(const std::vector<std::string>& args
     m_wallet->getTransaction(trantransactionNumber, txInfo);
     if (txInfo.totalAmount < 0) continue;
     hasTransfers = true;
-    logger(INFO) << "        amount       \t                              tx id";
+    logger(INFO) << "        Amount:      \t                              TX ID:";
     logger(INFO, GREEN) <<  // spent - magenta
       std::setw(21) << m_currency.formatAmount(txInfo.totalAmount) << '\t' << Common::podToHex(txInfo.hash);
   }
 
   if (!hasTransfers) success_msg_writer() << "No incoming transfers";
+  return true;
+}
+
+bool simple_wallet::show_outgoing_transfers(const std::vector<std::string>& args) {
+  bool hasTransfers = false;
+  size_t transactionsCount = m_wallet->getTransactionCount();
+  for (size_t transactionNumber = 0; transactionNumber < transactionsCount; ++transactionNumber) {
+    WalletLegacyTransaction txInfo;
+    m_wallet->getTransaction(transactionNumber, txInfo);
+    if (txInfo.totalAmount > 0) continue;
+    hasTransfers = true;
+    logger(INFO) << "        Amount:      \t                              TX ID:";
+  logger(INFO, BRIGHT_MAGENTA) << std::setw(TOTAL_AMOUNT_MAX_WIDTH) << m_currency.formatAmount(txInfo.totalAmount) << '\t' << Common::podToHex(txInfo.hash);
+   for (TransferId id = txInfo.firstTransferId; id < txInfo.firstTransferId + txInfo.transferCount; ++id) {
+    WalletLegacyTransfer tr;
+    m_wallet->getTransfer(id, tr);
+    logger(INFO, MAGENTA) << std::setw(TOTAL_AMOUNT_MAX_WIDTH) << m_currency.formatAmount(-tr.amount) << '\t' << tr.address;
+  }
+  }
+   if (!hasTransfers) success_msg_writer() << "No outgoing transfers";
   return true;
 }
 
@@ -1185,6 +1207,12 @@ bool simple_wallet::show_payments(const std::vector<std::string> &args) {
 
   return true;
 }
+
+bool simple_wallet::generate_payment_id(const std::vector<std::string> &args) {
+  success_msg_writer() << "Payment ID: " << Crypto::rand<Crypto::Hash>();
+  return true;
+}
+
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::show_blockchain_height(const std::vector<std::string>& args) {
   try {

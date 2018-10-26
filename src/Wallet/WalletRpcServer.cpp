@@ -106,6 +106,7 @@ void wallet_rpc_server::processRequest(const CryptoNote::HttpRequest& request, C
       { "transfer", makeMemberMethod(&wallet_rpc_server::on_transfer) },
       { "store", makeMemberMethod(&wallet_rpc_server::on_store) },
       { "get_payments", makeMemberMethod(&wallet_rpc_server::on_get_payments) },
+      { "generateRandomPid", makeMemberMethod(&wallet_rpc_server::on_generate_payment_id) },
       { "get_transfers", makeMemberMethod(&wallet_rpc_server::on_get_transfers) },
       { "get_height", makeMemberMethod(&wallet_rpc_server::on_get_height) },
       { "reset", makeMemberMethod(&wallet_rpc_server::on_reset) }
@@ -289,6 +290,13 @@ bool wallet_rpc_server::on_get_height(const wallet_rpc::COMMAND_RPC_GET_HEIGHT::
 
 bool wallet_rpc_server::on_reset(const wallet_rpc::COMMAND_RPC_RESET::request& req, wallet_rpc::COMMAND_RPC_RESET::response& res) {
   m_wallet.reset();
+  return true;
+}
+
+bool wallet_rpc_server::on_generate_payment_id(const wallet_rpc::COMMAND_RPC_GENERATE_PAYMENT_ID::request& req, wallet_rpc::COMMAND_RPC_GENERATE_PAYMENT_ID::response& res) {
+  Crypto::Hash randomPID;
+  randomPID = Crypto::rand<Crypto::Hash>();
+  res.randomPaymentID = Common::podToHex(randomPID);
   return true;
 }
 

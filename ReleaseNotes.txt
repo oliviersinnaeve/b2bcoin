@@ -1,5 +1,13 @@
+Release notes 1.1.3
+- Added command to generate a random Payment ID in the CLI/simplewallet
+- Added command to list only outgoing transfers in the CLI/simplewallet
+  (new commands: generate_payment_id & list_outgoing_transfers)
+- Added RPC method to generate and return a random Payment ID for CLI/simplewallet
+  (new method: generateRandomPid)
+- Added a new checkpoint for faster sync
+
 Release notes 1.1.2
-- Added GUI recovery key to the simplewallet
+- Added command to get the GUI recovery key in the CLI/simplewallet
   (new commands: export_gui_key, export_cli_key & export_tracking_key)
 
 Release notes 1.1.1
