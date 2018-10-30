@@ -40,12 +40,15 @@ Configuration::Configuration() {
   logLevel = Logging::INFO;
   bindAddress = "";
   bindPort = 0;
+  rpcPassword = "";
+  legacySecurity = false;
 }
 
 void Configuration::initOptions(boost::program_options::options_description& desc) {
   desc.add_options()
       ("bind-address", po::value<std::string>()->default_value("0.0.0.0"), "payment service bind address")
       ("bind-port", po::value<uint16_t>()->default_value(8070), "payment service bind port")
+      ("rpc-password", po::value<std::string>(), "Specify the password to access the rpc server.")
       ("container-file,w", po::value<std::string>(), "container file")
       ("container-password,p", po::value<std::string>(), "container password")
       ("generate-container,g", "generate new container file with one wallet and exit")
@@ -129,6 +132,20 @@ void Configuration::init(const boost::program_options::variables_map& options) {
     if (containerFile.empty()) {
       throw ConfigurationError("container-file parameter are required");
     }
+  }
+
+  // If generating a container skip the authentication parameters.
+  if (generateNewContainer) {
+    return;
+  }
+
+  // Check for the rpc-password parameter
+  if (options.count("rpc-password") == 0) {
+    legacySecurity = true;
+  }
+
+  else {
+    rpcPassword = options["rpc-password"].as<std::string>();
   }
 }
 

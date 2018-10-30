@@ -1381,6 +1381,15 @@ int main(int argc, char* argv[]) {
     testnet(command_line::get_arg(vm, arg_testnet)).currency();
 
   if (command_line::has_arg(vm, Tools::wallet_rpc_server::arg_rpc_bind_port)) {
+ 	  /* 
+ 	    If the rpc interface is run, ensure that either legacy mode or an RPC
+ 	    password is set.
+ 	  */
+ 	  if (!command_line::has_arg(vm, Tools::wallet_rpc_server::arg_rpc_password) && !command_line::has_arg(vm, Tools::wallet_rpc_server::arg_rpc_legacy_security)) {
+ 	    logger(ERROR, BRIGHT_RED) << "\n\nUse the parameter --rpc-password=YourRPCpassword when you start simplewallet in RPC mode.\nIf you dont think you are going to need the extra security with a RPC password you can start simplewallet with --rpc-legacy-security.\n\n";
+ 	    return 1;
+ 	  }
+ 	
     //runs wallet with rpc interface
     if (!command_line::has_arg(vm, arg_wallet_file)) {
       logger(ERROR, BRIGHT_RED) << "B2B wallet file not set.";
@@ -1397,6 +1406,10 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
+	  if (command_line::has_arg(vm, Tools::wallet_rpc_server::arg_rpc_password)) {
+ 	    logger(INFO, BRIGHT_GREEN) << "B2B daemon started in RPC password mode.";
+ 	  }
+    
     std::string wallet_file = command_line::get_arg(vm, arg_wallet_file);
     std::string wallet_password = command_line::get_arg(vm, arg_password);
     std::string daemon_address = command_line::get_arg(vm, arg_daemon_address);
