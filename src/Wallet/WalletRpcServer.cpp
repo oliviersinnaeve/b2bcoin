@@ -37,11 +37,13 @@ namespace Tools {
 const command_line::arg_descriptor<uint16_t> wallet_rpc_server::arg_rpc_bind_port = { "rpc-bind-port", "Starts wallet as rpc server for wallet operations, sets bind port for server", 0, true };
 const command_line::arg_descriptor<std::string> wallet_rpc_server::arg_rpc_bind_ip = { "rpc-bind-ip", "Specify ip to bind rpc server", "127.0.0.1" };
 const command_line::arg_descriptor<std::string> wallet_rpc_server::arg_rpc_password = { "rpc-password", "Specify the password to access the rpc server.", "", true };
+const command_line::arg_descriptor<bool> wallet_rpc_server::arg_rpc_legacy_security = { "rpc-legacy-security", "Enable legacy mode (no password for RPC). WARNING: INSECURE. USE ONLY AS A LAST RESORT.", false};
 
 void wallet_rpc_server::init_options(boost::program_options::options_description& desc) {
   command_line::add_arg(desc, arg_rpc_bind_ip);
   command_line::add_arg(desc, arg_rpc_bind_port);
   command_line::add_arg(desc, arg_rpc_password);
+  command_line::add_arg(desc, arg_rpc_legacy_security);
 }
 //------------------------------------------------------------------------------------------------------------------------------
 wallet_rpc_server::wallet_rpc_server(
