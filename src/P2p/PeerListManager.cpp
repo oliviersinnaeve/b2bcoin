@@ -273,3 +273,17 @@ PeerlistManager::Peerlist& PeerlistManager::getWhite() {
 PeerlistManager::Peerlist& PeerlistManager::getGray() { 
   return m_grayPeerlist; 
 }
+
+bool PeerlistManager::resetPeers() {
+
+    bool isReset = false;
+
+    try {
+        m_peers_gray.clear();
+        m_peers_white.clear();
+        isReset = true;
+    } catch (std::exception&) {
+    }
+
+    return isReset;
+}
