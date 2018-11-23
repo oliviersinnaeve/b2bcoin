@@ -170,7 +170,6 @@ std::string m_import_new;
 uint64_t m_default_fee;
 
     std::string m_wallet_file;
-    bool sync_from_zero;
 
     std::unique_ptr<std::promise<std::error_code>> m_initResultPromise;
 

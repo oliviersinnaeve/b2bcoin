@@ -51,7 +51,6 @@ struct Configuration {
   bool unregisterService;
   bool testnet;
   bool printAddresses;
-  bool syncFromZero;
   bool legacySecurity;
 
   size_t logLevel;

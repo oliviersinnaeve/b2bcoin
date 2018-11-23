@@ -330,13 +330,8 @@ void generateNewWallet(const CryptoNote::Currency& currency, const WalletConfigu
   log(Logging::INFO, Logging::BRIGHT_WHITE) << "Generating new wallet";
 
   wallet->initialize(conf.walletFile, conf.walletPassword);
-  std::string address;
-  if (conf.syncFromZero) {
-    CryptoNote::KeyPair spendKey;
-    Crypto::generate_keys(spendKey.publicKey, spendKey.secretKey);
-    address = wallet->createAddress(spendKey.secretKey);
-  } else
-    address = wallet->createAddress();
+
+  auto address = wallet->createAddress();
 
   log(Logging::INFO, Logging::BRIGHT_WHITE) << "New wallet is generated. Address: " << address;
 
