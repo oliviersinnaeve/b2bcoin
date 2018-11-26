@@ -184,9 +184,10 @@ const std::initializer_list<CheckpointData> CHECKPOINTS = {
 , {192000, "41c3f63ac25cc804dcd3e05903df36928df4ea5a15cfc409e106b2cd9efd9710"}
 , {224000, "1bf3a0336d5b76158030596844a50ca2da8fdc4c8d2f1eaff76d3763c5ff066b"}
 , {235971, "83ac894283cb5dc6206a9248d947c6c71e17883fac32e57cd1a4558f994b871d"} // Make sure we are on correct chain after adding LWMA
+, {243273, "1661d23c1baaf489805f68a8fd48736b31b87e8d2960225ff8d9bc1e2600753b"} // Make sure we are on correct chain after adding LWMA
 , {256000, "93ba502fc37a17ca201e23495ce73d69243e1f80ba9a0db064ccfdda510c31ec"}
 , {288000, "a63d4eae1f0e66b97605d098711033b2e3f9c916b8a898b71b090f080d2f41f8"}
-, {299000, "03a7d360aef4a63bb36220335f4cfeddcfaeedf6fb0bcde2222d73e10a585905"} // Just for faster sync...
+, {301700, "cdfa72ca10f1b3bd0b394fbeb0fc229720693ba0391dbcba9150dcc3aab9997c"} // Just for faster sync...
 };
 
 } // CryptoNote
