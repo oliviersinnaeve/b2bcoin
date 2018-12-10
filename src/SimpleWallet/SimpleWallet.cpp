@@ -167,11 +167,6 @@ struct TransferCommand {
         return false;
       }
 
-              if (fake_outs_count < m_currency.minMixin()) {
-                logger(ERROR, BRIGHT_RED) << "mixin should be equal or bigger to " << m_currency.minMixin();
-                return false;
-              }
-
       while (!ar.eof()) {
 
         auto arg = ar.next();
@@ -628,7 +623,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
   Tools::PasswordContainer pwd_container;
   if (command_line::has_arg(vm, arg_password)) {
     pwd_container.password(command_line::get_arg(vm, arg_password));
-  } else if (!pwd_container.read_password()) {
+  } else if (!pwd_container.read_password(!m_generate_new.empty() || !m_import_new.empty())) {
     fail_msg_writer() << "Failed to read the B2B wallet password";
     return false;
   }

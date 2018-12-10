@@ -21,7 +21,6 @@
 #include "Currency.h"
 #include "Difficulty.h"
 #include "IBlockchainCache.h"
-#include "CryptoNoteCore/UpgradeManager.h"
 #include <IDataBase.h>
 #include <CryptoNoteCore/BlockchainReadBatch.h>
 #include <CryptoNoteCore/BlockchainWriteBatch.h>
@@ -148,7 +147,6 @@ public:
   virtual RawBlock getBlockByIndex(uint32_t index) const override;
   virtual BinaryArray getRawTransaction(uint32_t blockIndex, uint32_t transactionIndex) const override;
   virtual std::vector<Crypto::Hash> getTransactionHashes() const override;
-  virtual std::vector<uint32_t> getRandomOutsByAmount(uint64_t amount, size_t count, uint32_t blockIndex, uint32_t startBlockIndex) const override;
   virtual std::vector<uint32_t> getRandomOutsByAmount(uint64_t amount, size_t count,
                                                       uint32_t blockIndex) const override;
   virtual ExtractOutputKeysResult
@@ -207,7 +205,7 @@ private:
   void requestDeleteKeyOutputsAmount(BlockchainWriteBatch& writeBatch, IBlockchainCache::Amount amount, IBlockchainCache::GlobalOutputIndex boundary, uint32_t outputsCount);
   void requestRemoveTimestamp(BlockchainWriteBatch& batch, uint64_t timestamp, const Crypto::Hash& blockHash);
 
-uint8_t getBlockMajorVersionForHeight(uint32_t height) const;
+  uint8_t getBlockMajorVersionForHeight(uint32_t height) const;
   uint64_t getCachedTransactionsCount() const;
 
   std::vector<CachedBlockInfo> getLastCachedUnits(uint32_t blockIndex, size_t count, UseGenesis useGenesis) const;

@@ -127,6 +127,8 @@ std::unordered_map<std::string, RpcServer::RpcHandler<RpcServer::HandlerFunction
   { "/sendrawtransaction", { jsonMethod<COMMAND_RPC_SEND_RAW_TX>(&RpcServer::on_send_raw_tx), false } },
   { "/feeaddress", { jsonMethod<COMMAND_RPC_GET_FEE_ADDRESS>(&RpcServer::on_get_fee_address), true } },
   { "/stop_daemon", { jsonMethod<COMMAND_RPC_STOP_DAEMON>(&RpcServer::on_stop_daemon), true } },
+  { "/peers", { jsonMethod<COMMAND_RPC_GET_PEER_LIST>(&RpcServer::on_get_peer_list), true } },
+  { "/generatePaymentId", { jsonMethod<COMMAND_RPC_GENERATE_PAYMENT_ID>(&RpcServer::on_get_payment_id), true } },
 
   // json rpc
   { "/json_rpc", { std::bind(&RpcServer::processJsonRpcRequest, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), true } }
@@ -536,6 +538,29 @@ bool RpcServer::on_stop_daemon(const COMMAND_RPC_STOP_DAEMON::request& req, COMM
   return true;
 }
 
+bool RpcServer::on_get_peer_list(const COMMAND_RPC_GET_PEER_LIST::request& req, COMMAND_RPC_GET_PEER_LIST::response& res) {
+	std::list<PeerlistEntry> pl_wite;
+	std::list<PeerlistEntry> pl_gray;
+	m_p2p.getPeerlistManager().get_peerlist_full(pl_gray, pl_wite);
+	for (const auto& pe : pl_wite) {
+		std::stringstream ss;
+		ss << pe.adr;
+		res.peers.push_back(ss.str());
+	}
+	res.status = CORE_RPC_STATUS_OK;
+	return true;
+}
+
+bool RpcServer::on_get_payment_id(const COMMAND_RPC_GENERATE_PAYMENT_ID::request& req, COMMAND_RPC_GENERATE_PAYMENT_ID::response& res) {
+  std::string randomPID;
+  try {
+    randomPID = Common::podToHex(Crypto::rand<Crypto::Hash>());
+  } catch (const std::exception& e) {
+    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: can't generate Payment ID" };
+  }
+  res.randomPaymentID = randomPID;
+  return true;
+}
 //------------------------------------------------------------------------------------------------------------------------------
 // JSON RPC methods
 //------------------------------------------------------------------------------------------------------------------------------

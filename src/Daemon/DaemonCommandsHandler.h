@@ -56,7 +56,6 @@ private:
   bool exit(const std::vector<std::string>& args);
   bool help(const std::vector<std::string>& args);
   bool print_pl(const std::vector<std::string>& args);
-  bool resetPeers(const std::vector<std::string>& args);
   bool show_hr(const std::vector<std::string>& args);
   bool hide_hr(const std::vector<std::string>& args);
   bool print_bc_outs(const std::vector<std::string>& args);

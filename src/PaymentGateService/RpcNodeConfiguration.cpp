@@ -28,8 +28,8 @@ RpcNodeConfiguration::RpcNodeConfiguration() {
 
 void RpcNodeConfiguration::initOptions(boost::program_options::options_description& desc) {
   desc.add_options()
-    ("daemon-address", po::value<std::string>()->default_value("localhost"), "bytecoind address")
-    ("daemon-port", po::value<uint16_t>()->default_value(39156), "daemon port");
+    ("daemon-address", po::value<std::string>()->default_value("localhost"), "b2bcoind address")
+    ("daemon-port", po::value<uint16_t>()->default_value(39156), "b2bcoind port");
 }
 
 void RpcNodeConfiguration::init(const boost::program_options::variables_map& options) {

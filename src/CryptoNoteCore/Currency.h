@@ -40,42 +40,33 @@ public:
   uint64_t publicAddressBase58Prefix() const { return m_publicAddressBase58Prefix; }
   uint32_t minedMoneyUnlockWindow() const { return m_minedMoneyUnlockWindow; }
 
-  size_t timestampCheckWindow() const { return m_timestampCheckWindow; }
+  size_t timestampCheckWindow(uint32_t blockHeight) const {
+    if (blockHeight >= CryptoNote::parameters::UPGRADE_HEIGHT_V4_MTP) {
+      return m_timestampCheckWindowV4;
+    } else {
+      return m_timestampCheckWindow;
+    }
+  }
+
+  size_t timestampCheckWindowV4() const { return m_timestampCheckWindowV4; }
   uint64_t blockFutureTimeLimit() const { return m_blockFutureTimeLimit; }
 
   uint64_t moneySupply() const { return m_moneySupply; }
   unsigned int emissionSpeedFactor() const { return m_emissionSpeedFactor; }
-  uint64_t genesisBlockReward() const { return m_genesisBlockReward; }
-  size_t cryptonoteCoinVersion() const { return m_cryptonoteCoinVersion; }
 
   size_t rewardBlocksWindow() const { return m_rewardBlocksWindow; }
-  size_t minMixin() const { return m_minMixin; }
-  uint8_t mandatoryMixinBlockVersion() const { return m_mandatoryMixinBlockVersion; }
-  uint32_t mixinStartHeight() const { return m_mixinStartHeight; }
-  uint32_t mandatoryTransaction() const { return m_mandatoryTransaction; }
-  uint32_t killHeight() const { return m_killHeight; }
-  uint64_t tailEmissionReward() const { return m_tailEmissionReward; }
-  uint32_t zawyDifficultyBlockIndex() const { return m_zawyDifficultyBlockIndex; }
-  uint32_t zawyDifficultyLastBlock() const { return m_zawyDifficultyLastBlock; }
-  uint64_t zawyDifficultyMin() const { return m_zawyDifficultyMin; }
-  uint32_t zawyLWMADifficultyBlockIndex() const { return m_zawyLWMADifficultyBlockIndex; }
-  uint32_t zawyLWMADifficultyLastBlock() const { return m_zawyLWMADifficultyLastBlock; }
-  uint64_t zawyLWMADifficultyMin() const { return m_zawyLWMADifficultyMin; }
-  size_t zawyLWMADifficultyN() const { return m_zawyLWMADifficultyN; }
-  uint32_t zawyLWMAfixDifficultyBlockIndex() const { return m_zawyLWMAfixDifficultyBlockIndex; }
-  uint32_t zawyLWMAfixDifficultyLastBlock() const { return m_zawyLWMAfixDifficultyLastBlock; }
-  uint64_t zawyLWMAfixDifficultyMin() const { return m_zawyLWMAfixDifficultyMin; }
-  size_t zawyLWMAfixDifficultyN() const { return m_zawyLWMAfixDifficultyN; }
-  uint32_t zawyLWMA2DifficultyBlockIndex() const { return m_zawyLWMA2DifficultyBlockIndex; }
-  uint32_t zawyLWMA2DifficultyLastBlock() const { return m_zawyLWMA2DifficultyLastBlock; }
-  uint64_t zawyLWMA2DifficultyMin() const { return m_zawyLWMA2DifficultyMin; }
-  size_t zawyLWMA2DifficultyN() const { return m_zawyLWMA2DifficultyN; }
-  uint32_t buggedZawyDifficultyBlockIndex() const { return m_buggedZawyDifficultyBlockIndex; }
   size_t blockGrantedFullRewardZone() const { return m_blockGrantedFullRewardZone; }
-  size_t blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const;
+  size_t blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
+      return m_blockGrantedFullRewardZone;
+    } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
+      return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2;
+    } else {
+      return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
+    }
+  }
   size_t minerTxBlobReservedSize() const { return m_minerTxBlobReservedSize; }
   uint64_t maxTransactionSizeLimit() const { return m_maxTransactionSizeLimit; }
-
   size_t numberOfDecimalPlaces() const { return m_numberOfDecimalPlaces; }
   uint64_t coin() const { return m_coin; }
 
@@ -84,13 +75,23 @@ public:
 
   uint64_t difficultyTarget() const { return m_difficultyTarget; }
   size_t difficultyWindow() const { return m_difficultyWindow; }
-size_t difficultyWindowByBlockVersion(uint8_t blockMajorVersion) const;
+  size_t difficultyWindowByBlockVersion(uint8_t blockMajorVersion) const {
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_4) {
+      return CryptoNote::parameters::DIFFICULTY_WINDOW_V4;
+    }
+    return CryptoNote::parameters::DIFFICULTY_WINDOW;
+  }
+
   size_t difficultyLag() const { return m_difficultyLag; }
-size_t difficultyLagByBlockVersion(uint8_t blockMajorVersion) const;
   size_t difficultyCut() const { return m_difficultyCut; }
-size_t difficultyCutByBlockVersion(uint8_t blockMajorVersion) const;
   size_t difficultyBlocksCount() const { return m_difficultyWindow + m_difficultyLag; }
-size_t difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion) const;
+  size_t difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion) const {
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_4) {
+      return difficultyWindowByBlockVersion(blockMajorVersion);
+    } else {
+      return difficultyWindowByBlockVersion(blockMajorVersion) + m_difficultyLag;
+    }
+  }
 
   size_t maxBlockSizeInitial() const { return m_maxBlockSizeInitial; }
   uint64_t maxBlockSizeGrowthSpeedNumerator() const { return m_maxBlockSizeGrowthSpeedNumerator; }
@@ -107,7 +108,18 @@ size_t difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion) const;
   size_t fusionTxMinInputCount() const { return m_fusionTxMinInputCount; }
   size_t fusionTxMinInOutCountRatio() const { return m_fusionTxMinInOutCountRatio; }
 
-  uint32_t upgradeHeight(uint8_t majorVersion) const;
+  uint32_t upgradeHeight(uint8_t majorVersion) const {
+    if (majorVersion == BLOCK_MAJOR_VERSION_2) {
+      return m_upgradeHeightV2;
+    } else if (majorVersion == BLOCK_MAJOR_VERSION_3) {
+      return m_upgradeHeightV3;
+    } else if (majorVersion == BLOCK_MAJOR_VERSION_4) {
+      return m_upgradeHeightV4;
+    } else {
+      return static_cast<uint32_t>(-1);
+    }
+  }
+
   unsigned int upgradeVotingThreshold() const { return m_upgradeVotingThreshold; }
   uint32_t upgradeVotingWindow() const { return m_upgradeVotingWindow; }
   uint32_t upgradeWindow() const { return m_upgradeWindow; }
@@ -146,13 +158,12 @@ size_t difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion) const;
   std::string formatAmount(int64_t amount) const;
   bool parseAmount(const std::string& str, uint64_t& amount) const;
 
-  Difficulty nextDifficulty(std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-  Difficulty nextDifficultyZawyLWMA2(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-  Difficulty nextDifficultyZawyLWMAfix(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-  Difficulty nextDifficultyZawyLWMA(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-  Difficulty nextDifficultyZawyV1(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-  Difficulty nextDifficulty(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
-  Difficulty nextDifficultyDefault(uint8_t version, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficulty(uint8_t blockMajorVersion, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyDefault(std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyV1(uint8_t blockMajorVersion, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyV2(uint8_t blockMajorVersion, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+  Difficulty nextDifficultyV3(uint8_t blockMajorVersion, uint32_t blockIndex, std::vector<uint64_t> timestamps, std::vector<Difficulty> cumulativeDifficulties) const;
+
 
   bool checkProofOfWorkV1(Crypto::cn_context& context, const CachedBlock& block, Difficulty currentDifficulty) const;
   bool checkProofOfWorkV2(Crypto::cn_context& context, const CachedBlock& block, Difficulty currentDifficulty) const;
@@ -178,36 +189,13 @@ private:
   uint32_t m_minedMoneyUnlockWindow;
 
   size_t m_timestampCheckWindow;
+  size_t m_timestampCheckWindowV4;
   uint64_t m_blockFutureTimeLimit;
 
   uint64_t m_moneySupply;
   unsigned int m_emissionSpeedFactor;
-  uint64_t m_genesisBlockReward;
-  size_t m_cryptonoteCoinVersion;
 
   size_t m_rewardBlocksWindow;
-  size_t m_minMixin;
-  uint8_t m_mandatoryMixinBlockVersion;
-  uint32_t m_mixinStartHeight;
-  uint32_t m_mandatoryTransaction;
-  uint32_t m_killHeight;
-  uint64_t m_tailEmissionReward;
-  uint32_t m_zawyDifficultyBlockIndex;
-  uint32_t m_zawyDifficultyLastBlock;
-  uint64_t m_zawyDifficultyMin;
-  uint32_t m_zawyLWMADifficultyBlockIndex;
-  uint32_t m_zawyLWMADifficultyLastBlock;
-  uint64_t m_zawyLWMADifficultyMin;
-  size_t m_zawyLWMADifficultyN;
-  uint32_t m_zawyLWMAfixDifficultyBlockIndex;
-  uint32_t m_zawyLWMAfixDifficultyLastBlock;
-  uint64_t m_zawyLWMAfixDifficultyMin;
-  size_t m_zawyLWMAfixDifficultyN;
-  uint32_t m_zawyLWMA2DifficultyBlockIndex;
-  uint32_t m_zawyLWMA2DifficultyLastBlock;
-  uint64_t m_zawyLWMA2DifficultyMin;
-  size_t m_zawyLWMA2DifficultyN;
-  uint32_t m_buggedZawyDifficultyBlockIndex;
   size_t m_blockGrantedFullRewardZone;
   size_t m_minerTxBlobReservedSize;
   uint64_t m_maxTransactionSizeLimit;
@@ -251,8 +239,8 @@ private:
 
   static const std::vector<uint64_t> PRETTY_AMOUNTS;
 
-  bool m_testnet;
   bool m_isBlockexplorer;
+  bool m_testnet;
 
   BlockTemplate genesisBlockTemplate;
   std::unique_ptr<CachedBlock> cachedGenesisBlock;
@@ -274,8 +262,6 @@ public:
     return std::move(m_currency);
   }
 
-  Transaction generateGenesisTransaction();
-  Transaction generateGenesisTransaction(const std::vector<AccountPublicAddress>& targets);
   CurrencyBuilder& maxBlockNumber(uint32_t val) { m_currency.m_maxBlockHeight = val; return *this; }
   CurrencyBuilder& maxBlockBlobSize(size_t val) { m_currency.m_maxBlockBlobSize = val; return *this; }
   CurrencyBuilder& maxTxSize(size_t val) { m_currency.m_maxTxSize = val; return *this; }
@@ -283,36 +269,13 @@ public:
   CurrencyBuilder& minedMoneyUnlockWindow(uint32_t val) { m_currency.m_minedMoneyUnlockWindow = val; return *this; }
 
   CurrencyBuilder& timestampCheckWindow(size_t val) { m_currency.m_timestampCheckWindow = val; return *this; }
+  CurrencyBuilder& timestampCheckWindowV4(size_t val) { m_currency.m_timestampCheckWindowV4 = val; return *this; }
   CurrencyBuilder& blockFutureTimeLimit(uint64_t val) { m_currency.m_blockFutureTimeLimit = val; return *this; }
 
   CurrencyBuilder& moneySupply(uint64_t val) { m_currency.m_moneySupply = val; return *this; }
   CurrencyBuilder& emissionSpeedFactor(unsigned int val);
-  CurrencyBuilder& genesisBlockReward(uint64_t val) { m_currency.m_genesisBlockReward = val; return *this; }
-  CurrencyBuilder& cryptonoteCoinVersion(size_t val) { m_currency.m_cryptonoteCoinVersion = val; return *this; }
 
   CurrencyBuilder& rewardBlocksWindow(size_t val) { m_currency.m_rewardBlocksWindow = val; return *this; }
-  CurrencyBuilder& minMixin(size_t val) { m_currency.m_minMixin = val; return *this; }
-  CurrencyBuilder& mandatoryMixinBlockVersion(uint8_t val) { m_currency.m_mandatoryMixinBlockVersion = val; return *this; }
-  CurrencyBuilder& mixinStartHeight(uint32_t val) { m_currency.m_mixinStartHeight = val; return *this; }
-  CurrencyBuilder& mandatoryTransaction(uint8_t val) { m_currency.m_mandatoryTransaction = val; return *this; }
-  CurrencyBuilder& killHeight(uint32_t val) { m_currency.m_killHeight = val; return *this; }
-  CurrencyBuilder& tailEmissionReward(uint64_t val) { m_currency.m_tailEmissionReward = val; return *this; }
-  CurrencyBuilder& zawyDifficultyBlockIndex(uint32_t val) { m_currency.m_zawyDifficultyBlockIndex = val; return *this; }
-  CurrencyBuilder& zawyDifficultyLastBlock(uint32_t val) { m_currency.m_zawyDifficultyLastBlock = val; return *this; }
-  CurrencyBuilder& zawyDifficultyMin(uint64_t val) { m_currency.m_zawyDifficultyMin = val; return *this; }
-  CurrencyBuilder& zawyLWMADifficultyBlockIndex(uint32_t val) { m_currency.m_zawyLWMADifficultyBlockIndex = val; return *this; }
-  CurrencyBuilder& zawyLWMADifficultyLastBlock(uint32_t val) { m_currency.m_zawyLWMADifficultyLastBlock = val; return *this; }
-  CurrencyBuilder& zawyLWMADifficultyMin(uint64_t val) { m_currency.m_zawyLWMADifficultyMin = val; return *this; }
-  CurrencyBuilder& zawyLWMADifficultyN(size_t val) { m_currency.m_zawyLWMADifficultyN = val; return *this; }
-  CurrencyBuilder& zawyLWMAfixDifficultyBlockIndex(uint32_t val) { m_currency.m_zawyLWMAfixDifficultyBlockIndex = val; return *this; }
-  CurrencyBuilder& zawyLWMAfixDifficultyLastBlock(uint32_t val) { m_currency.m_zawyLWMAfixDifficultyLastBlock = val; return *this; }
-  CurrencyBuilder& zawyLWMAfixDifficultyMin(uint64_t val) { m_currency.m_zawyLWMAfixDifficultyMin = val; return *this; }
-  CurrencyBuilder& zawyLWMAfixDifficultyN(size_t val) { m_currency.m_zawyLWMAfixDifficultyN = val; return *this; }
-  CurrencyBuilder& zawyLWMA2DifficultyBlockIndex(uint32_t val) { m_currency.m_zawyLWMA2DifficultyBlockIndex = val; return *this; }
-  CurrencyBuilder& zawyLWMA2DifficultyLastBlock(uint32_t val) { m_currency.m_zawyLWMA2DifficultyLastBlock = val; return *this; }
-  CurrencyBuilder& zawyLWMA2DifficultyMin(uint64_t val) { m_currency.m_zawyLWMA2DifficultyMin = val; return *this; }
-  CurrencyBuilder& zawyLWMA2DifficultyN(size_t val) { m_currency.m_zawyLWMA2DifficultyN = val; return *this; }
-  CurrencyBuilder& buggedZawyDifficultyBlockIndex(uint32_t val) { m_currency.m_buggedZawyDifficultyBlockIndex = val; return *this; }
   CurrencyBuilder& blockGrantedFullRewardZone(size_t val) { m_currency.m_blockGrantedFullRewardZone = val; return *this; }
   CurrencyBuilder& minerTxBlobReservedSize(size_t val) { m_currency.m_minerTxBlobReservedSize = val; return *this; }
   CurrencyBuilder& maxTransactionSizeLimit(uint64_t val) { m_currency.m_maxTransactionSizeLimit = val; return *this; }

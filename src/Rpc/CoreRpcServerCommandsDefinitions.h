@@ -260,6 +260,18 @@ struct COMMAND_RPC_START_MINING {
   };
 };
 //-----------------------------------------------
+struct COMMAND_RPC_GET_PEER_LIST {
+	typedef EMPTY_STRUCT request;
+ 	struct response {
+		std::vector<std::string> peers;
+		std::string status;
+ 		void serialize(ISerializer &s) {
+			KV_MEMBER(peers)
+			KV_MEMBER(status)
+		}
+	};
+};
+//-----------------------------------------------
 struct COMMAND_RPC_GET_INFO {
   typedef EMPTY_STRUCT request;
 
@@ -676,6 +688,18 @@ struct COMMAND_RPC_QUERY_BLOCKS_LITE {
       KV_MEMBER(fullOffset)
       KV_MEMBER(items)
     }
+  };
+};
+
+struct COMMAND_RPC_GENERATE_PAYMENT_ID {
+  typedef EMPTY_STRUCT request;
+  
+  struct response {
+	  std::string randomPaymentID;
+
+	  void serialize(ISerializer &s) {
+		  KV_MEMBER(randomPaymentID)
+	  }
   };
 };
 

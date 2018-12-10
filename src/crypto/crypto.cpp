@@ -298,16 +298,16 @@ namespace Crypto {
     ge_p1p1_to_p3(&res, &point2);
   }
 
-    KeyImage crypto_ops::scalarmultKey(const KeyImage & P, const KeyImage & a) {
-        ge_p3 A;
-        ge_p2 R;
+  KeyImage crypto_ops::scalarmultKey(const KeyImage & P, const KeyImage & a) {
+    ge_p3 A;
+    ge_p2 R;
 // maybe use assert instead?
-        ge_frombytes_vartime(&A, reinterpret_cast<const unsigned char*>(&P));
-        ge_scalarmult(&R, reinterpret_cast<const unsigned char*>(&a), &A);
-        KeyImage aP;
-        ge_tobytes(reinterpret_cast<unsigned char*>(&aP), &R);
-        return aP;
-    }
+    ge_frombytes_vartime(&A, reinterpret_cast<const unsigned char*>(&P));
+    ge_scalarmult(&R, reinterpret_cast<const unsigned char*>(&a), &A);
+    KeyImage aP;
+    ge_tobytes(reinterpret_cast<unsigned char*>(&aP), &R);
+    return aP;
+  }
 
   void crypto_ops::hash_data_to_ec(const uint8_t* data, std::size_t len, PublicKey& key) {
     Hash h;
@@ -342,20 +342,14 @@ namespace Crypto {
   struct ec_point_pair {
     EllipticCurvePoint a, b;
   };
+
   struct rs_comm {
-  Hash h;
-  struct ec_point_pair ab[];
-};
-/*
     Hash h;
-    struct {
-      EllipticCurvePoint a, b;
-    } ab[];
+    struct ec_point_pair ab[];
   };
 
-*/
   static inline size_t rs_comm_size(size_t pubs_count) {
-     return sizeof(rs_comm) + pubs_count * sizeof(ec_point_pair);
+    return sizeof(rs_comm) + pubs_count * sizeof(ec_point_pair);
   }
 
   void crypto_ops::generate_ring_signature(const Hash &prefix_hash, const KeyImage &image,

@@ -501,9 +501,7 @@ Difficulty Core::getDifficultyForNextBlock() const {
   IBlockchainCache* mainChain = chainsLeaves[0];
 
   uint32_t topBlockIndex = mainChain->getTopBlockIndex();
-
   uint8_t nextBlockMajorVersion = getBlockMajorVersionForHeight(topBlockIndex);
-
   size_t blocksCount = std::min(static_cast<size_t>(topBlockIndex), currency.difficultyBlocksCountByBlockVersion(nextBlockMajorVersion));
 
   auto timestamps = mainChain->getLastTimestamps(blocksCount);
@@ -571,18 +569,6 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
   if (blockValidationResult) {
     logger(Logging::WARNING) << "Failed to validate block " << cachedBlock.getBlockHash() << ": " << blockValidationResult.message();
     return blockValidationResult;
-  }
-
-  if (currency.mandatoryTransaction()) {
-    if (cachedBlock.getBlock().transactionHashes.size() < 1 && cache->getBlockIndex(cachedBlock.getBlockHash()) > parameters::CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW) {
-      logger(Logging::WARNING) << "New block must have at least one transaction";
-      return error::BlockValidationError::NOT_ENOUGH_TRANSACTIONS;
-    }
-  }
-
-  if (currency.killHeight() != 0 && cache->getBlockIndex(cachedBlock.getBlockHash()) > currency.killHeight()) {
-    logger(Logging::ERROR, Logging::BRIGHT_RED) << "Cannot add more blocks. Block " << currency.killHeight() << " is the kill block";
-      return error::BlockValidationError::NO_MORE_BLOCK;
   }
 
   auto currentDifficulty = cache->getDifficultyForNextBlock(previousBlockIndex);
@@ -875,15 +861,13 @@ bool Core::getRandomOutputs(uint64_t amount, uint16_t count, std::vector<uint32_
     return true;
   }
 
-// Add bottomBlockLimit
-auto bottomBlockLimit = currency.mixinStartHeight();
   auto upperBlockLimit = getTopBlockIndex() - currency.minedMoneyUnlockWindow();
   if (upperBlockLimit < currency.minedMoneyUnlockWindow()) {
     logger(Logging::DEBUGGING) << "Blockchain height is less than mined unlock window";
     return false;
   }
 
- globalIndexes = chainsLeaves[0]->getRandomOutsByAmount(amount, count, getTopBlockIndex(), bottomBlockLimit);
+  globalIndexes = chainsLeaves[0]->getRandomOutsByAmount(amount, count, getTopBlockIndex());
   if (globalIndexes.empty()) {
     return false;
   }
@@ -1024,7 +1008,7 @@ bool Core::getBlockTemplate(BlockTemplate& b, const AccountPublicAddress& adr, c
 
   b = boost::value_initialized<BlockTemplate>();
   b.majorVersion = getBlockMajorVersionForHeight(height);
- 
+
   if (b.majorVersion == BLOCK_MAJOR_VERSION_1) {
     b.minorVersion = currency.upgradeHeight(BLOCK_MAJOR_VERSION_2) == IUpgradeDetector::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
   } else if (b.majorVersion >= BLOCK_MAJOR_VERSION_2) {
@@ -1051,19 +1035,20 @@ bool Core::getBlockTemplate(BlockTemplate& b, const AccountPublicAddress& adr, c
   b.previousBlockHash = getTopBlockHash();
   b.timestamp = time(nullptr);
 
-  // Jagerman fix - https://github.com/graft-project/GraftNetwork/pull/118/commits
-  uint64_t blockchain_timestamp_check_window = b.majorVersion < BLOCK_MAJOR_VERSION_4 ? parameters::BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW : parameters::BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V4;
-  if(height >= blockchain_timestamp_check_window) {
-      std::vector<uint64_t> timestamps;
-      for(size_t offset = height - blockchain_timestamp_check_window; offset < height; ++offset){
-        timestamps.push_back(getBlockTimestampByIndex(offset));
-      }
-      uint64_t median_ts = Common::medianValue(timestamps);
-      if (b.timestamp < median_ts) {
-        b.timestamp = median_ts;
-      }
+  // https://github.com/graft-project/GraftNetwork/pull/118/commits
+  // Thanks Jagerman for this
+  // adapted from monero code by stevebrush for bytecoin 2 code
+
+  if (height >= currency.timestampCheckWindow(height)) {
+    std::vector<uint64_t> timestamps;
+    for (size_t offset = height - currency.timestampCheckWindow(height); offset < height; ++offset) {
+      timestamps.push_back(getBlockTimestampByIndex(offset));
+    }
+    uint64_t median_ts = Common::medianValue(timestamps);
+    if (b.timestamp < median_ts) {
+      b.timestamp = median_ts;
+    }
   }
-  // Jagerman fix
 
   size_t medianSize = calculateCumulativeBlocksizeLimit(height) / 2;
 
@@ -1089,12 +1074,6 @@ bool Core::getBlockTemplate(BlockTemplate& b, const AccountPublicAddress& adr, c
     return false;
   }
 
-  if (currency.mandatoryTransaction()) {
-    if (transactionsSize == 0 && height > parameters::CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW) { 
-      logger(Logging::ERROR, Logging::BRIGHT_RED) << "Need at least one transaction beside base transaction";
-      return false;
-    }
-  }
   size_t cumulativeSize = transactionsSize + getObjectBinarySize(b.baseTransaction);
   const size_t TRIES_COUNT = 10;
   for (size_t tryCount = 0; tryCount < TRIES_COUNT; ++tryCount) {
@@ -1239,13 +1218,7 @@ std::error_code Core::validateTransaction(const CachedTransaction& cachedTransac
                                           IBlockchainCache* cache, uint64_t& fee, uint32_t blockIndex) {
   // TransactionValidatorState currentState;
   const auto& transaction = cachedTransaction.getTransaction();
-uint8_t blockMajorVersion = getBlockMajorVersionForHeight(blockIndex);
-auto error_mixin = validateMixin(transaction, blockMajorVersion);
-if (error_mixin != error::TransactionValidationError::VALIDATION_SUCCESS) {
-  return error_mixin;
-}
-
-auto error = validateSemantic(transaction, fee, blockIndex);
+  auto error = validateSemantic(transaction, fee, blockIndex);
   if (error != error::TransactionValidationError::VALIDATION_SUCCESS) {
     return error;
   }
@@ -1302,29 +1275,6 @@ auto error = validateSemantic(transaction, fee, blockIndex);
   return error::TransactionValidationError::VALIDATION_SUCCESS;
 }
 
-bool Core::f_getMixin(const Transaction& transaction, uint64_t& mixin) {
-  mixin = 0;
-  for (const TransactionInput& txin : transaction.inputs) {
-    if (txin.type() != typeid(KeyInput)) {
-      continue;
-    }
-    uint64_t currentMixin = boost::get<KeyInput>(txin).outputIndexes.size();
-    if (currentMixin > mixin) {
-      mixin = currentMixin;
-    }
-  }
-  return true;
-}
-
-std::error_code Core::validateMixin(const Transaction& transaction, uint8_t majorBlockVersion) {
-  uint64_t mixin = 0;
-  f_getMixin(transaction, mixin);
-  if (currency.mandatoryMixinBlockVersion() >= majorBlockVersion && mixin < currency.minMixin()) {
-    return error::TransactionValidationError::MIXIN_COUNT_TOO_SMALL;
-  }
-  return error::TransactionValidationError::VALIDATION_SUCCESS;
-}
-
 std::error_code Core::validateSemantic(const Transaction& transaction, uint64_t& fee, uint32_t blockIndex) {
   if (transaction.inputs.empty()) {
     return error::TransactionValidationError::EMPTY_INPUTS;
@@ -1351,10 +1301,10 @@ std::error_code Core::validateSemantic(const Transaction& transaction, uint64_t&
     summaryOutputAmount += output.amount;
   }
 
-    // parameters used for the additional key_image check
-    static const Crypto::KeyImage Z = { {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
-    static const Crypto::KeyImage I = { {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
-    static const Crypto::KeyImage L = { {0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 } };
+  // parameters used for the additional key_image check
+  static const Crypto::KeyImage Z = { {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+  static const Crypto::KeyImage I = { {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+  static const Crypto::KeyImage L = { {0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 } };
 
   uint64_t summaryInputAmount = 0;
   std::unordered_set<Crypto::KeyImage> ki;
@@ -1374,11 +1324,12 @@ std::error_code Core::validateSemantic(const Transaction& transaction, uint64_t&
 
       // outputIndexes are packed here, first is absolute, others are offsets to previous,
       // so first can be zero, others can't
-  // Fix discovered by Monero Lab and suggested by "fluffypony" (bitcointalk.org)
-  if (!(scalarmultKey(in.keyImage, L) == I) && blockIndex > parameters::KEY_IMAGE_CHECKING_BLOCK_INDEX) {
-    return error::TransactionValidationError::INPUT_INVALID_DOMAIN_KEYIMAGES;
-  }
 
+      // Fix discovered by Monero Lab and suggested by "fluffypony" (bitcointalk.org)
+      if (!(scalarmultKey(in.keyImage, L) == I) && blockIndex > parameters::KEY_IMAGE_CHECKING_BLOCK_INDEX) {
+        return error::TransactionValidationError::INPUT_INVALID_DOMAIN_KEYIMAGES;
+      }
+      
       if (std::find(++std::begin(in.outputIndexes), std::end(in.outputIndexes), 0) != std::end(in.outputIndexes)) {
         return error::TransactionValidationError::INPUT_IDENTICAL_OUTPUT_INDEXES;
       }
@@ -1446,8 +1397,8 @@ std::error_code Core::validateBlock(const CachedBlock& cachedBlock, IBlockchainC
     return error::BlockValidationError::TIMESTAMP_TOO_FAR_IN_FUTURE;
   }
 
-  auto timestamps = cache->getLastTimestamps(currency.timestampCheckWindow(), previousBlockIndex, addGenesisBlock);
-  if (timestamps.size() >= currency.timestampCheckWindow()) {
+  auto timestamps = cache->getLastTimestamps(currency.timestampCheckWindow(previousBlockIndex + 1), previousBlockIndex, addGenesisBlock);
+  if (timestamps.size() >= currency.timestampCheckWindow(previousBlockIndex + 1)) {
     auto median_ts = Common::medianValue(timestamps);
     if (block.timestamp < median_ts) {
       return error::BlockValidationError::TIMESTAMP_TOO_FAR_IN_PAST;

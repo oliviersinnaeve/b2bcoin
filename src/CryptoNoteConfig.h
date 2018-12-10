@@ -32,34 +32,10 @@ const uint32_t CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW               = 10;
 const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT                 = 60 * 6;
 
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW                  = 60;
-const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V4               = 12;
+const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V4               = 11;
 
 const uint64_t MONEY_SUPPLY                                       = UINT64_C(18446744073709551615); // total number coins to be generated
-const size_t   MIN_MIXIN                                          = 0;
-const uint8_t  MANDATORY_MIXIN_BLOCK_VERSION                      = 0;
-const uint32_t MIXIN_START_HEIGHT                                 = 0;
-const uint32_t MANDATORY_TRANSACTION                              = 0;
-const uint32_t KILL_HEIGHT                                        = 0;
-const uint64_t TAIL_EMISSION_REWARD                               = 0;
-const size_t   CRYPTONOTE_COIN_VERSION                            = 0;
-const uint32_t ZAWY_DIFFICULTY_BLOCK_INDEX                        = 94175;
-const uint32_t ZAWY_DIFFICULTY_LAST_BLOCK                         = 235949;
-const uint64_t ZAWY_DIFFICULTY_MIN                                = 1;
-const uint32_t ZAWY_LWMA_DIFFICULTY_BLOCK_INDEX                   = 235950;
-const uint32_t ZAWY_LWMA_DIFFICULTY_LAST_BLOCK                    = 243271;
-const uint64_t ZAWY_LWMA_DIFFICULTY_MIN                           = 1;
-const size_t   ZAWY_LWMA_DIFFICULTY_N                             = 120;
-const uint32_t ZAWY_LWMA_FIX_DIFFICULTY_BLOCK_INDEX               = 243272;
-const uint32_t ZAWY_LWMA_FIX_DIFFICULTY_LAST_BLOCK                = 0;
-const uint64_t ZAWY_LWMA_FIX_DIFFICULTY_MIN                       = 100000;
-const size_t   ZAWY_LWMA_FIX_DIFFICULTY_N                         = 61;
-const uint32_t ZAWY_LWMA2_DIFFICULTY_BLOCK_INDEX                  = 0;
-const uint32_t ZAWY_LWMA2_DIFFICULTY_LAST_BLOCK                   = 0;
-const uint64_t ZAWY_LWMA2_DIFFICULTY_MIN                          = 1;
-const size_t   ZAWY_LWMA2_DIFFICULTY_N                            = 0;
-const uint32_t BUGGED_ZAWY_DIFFICULTY_BLOCK_INDEX                 = 0;
 const unsigned EMISSION_SPEED_FACTOR                              = 18;
-const uint64_t GENESIS_BLOCK_REWARD                               = UINT64_C(0);
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
 
 const size_t   CRYPTONOTE_REWARD_BLOCKS_WINDOW                    = 100;
@@ -71,23 +47,14 @@ const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE             = 600;
 const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT                   = 12;
 const uint64_t MINIMUM_FEE                                        = UINT64_C(1000000);
 const uint64_t DEFAULT_DUST_THRESHOLD                             = UINT64_C(1000000);
-// Use 0 for default max transaction size limit
 const uint64_t MAX_TRANSACTION_SIZE_LIMIT                         = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE * 110 / 100 - CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE;
 const uint64_t DEFAULT_FEE                                        = MINIMUM_FEE;
-
 const uint64_t DIFFICULTY_TARGET                                  = 120; // seconds
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY                  = 24 * 60 * 60 / DIFFICULTY_TARGET;
 const size_t   DIFFICULTY_WINDOW                                  = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY; // blocks
-const size_t   DIFFICULTY_WINDOW_V1                               = DIFFICULTY_WINDOW;
-const size_t   DIFFICULTY_WINDOW_V2                               = DIFFICULTY_WINDOW;
-const size_t   DIFFICULTY_WINDOW_V3                               = DIFFICULTY_WINDOW;
 const size_t   DIFFICULTY_WINDOW_V4                               = 61;
 const size_t   DIFFICULTY_CUT                                     = 60;  // timestamps to cut after sorting
-const size_t   DIFFICULTY_CUT_V1                                  = DIFFICULTY_CUT;
-const size_t   DIFFICULTY_CUT_V2                                  = DIFFICULTY_CUT;
 const size_t   DIFFICULTY_LAG                                     = 15;  // !!!
-const size_t   DIFFICULTY_LAG_V1                                  = DIFFICULTY_LAG;
-const size_t   DIFFICULTY_LAG_V2                                  = DIFFICULTY_LAG;
 static_assert(2 * DIFFICULTY_CUT <= DIFFICULTY_WINDOW - 2, "Bad DIFFICULTY_WINDOW or DIFFICULTY_CUT");
 
 const size_t   MAX_BLOCK_SIZE_INITIAL                             = 100000;
@@ -108,7 +75,10 @@ const size_t   FUSION_TX_MIN_IN_OUT_COUNT_RATIO                   = 4;
 const uint32_t KEY_IMAGE_CHECKING_BLOCK_INDEX                     = 0;
 const uint32_t UPGRADE_HEIGHT_V2                                  = 1;
 const uint32_t UPGRADE_HEIGHT_V3                                  = 2;
+const uint32_t UPGRADE_HEIGHT_DA1                                 = 94175;
+const uint32_t UPGRADE_HEIGHT_DA2                                 = 235950;
 const uint32_t UPGRADE_HEIGHT_V4                                  = 243272;
+const uint32_t UPGRADE_HEIGHT_V4_MTP                              = 315000;
 const unsigned UPGRADE_VOTING_THRESHOLD                           = 90;               // percent
 const uint32_t UPGRADE_VOTING_WINDOW                              = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
 const uint32_t UPGRADE_WINDOW                                     = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
@@ -145,7 +115,7 @@ const size_t   P2P_LOCAL_WHITE_PEERLIST_LIMIT                = 1000;
 const size_t   P2P_LOCAL_GRAY_PEERLIST_LIMIT                 = 5000;
 
 const size_t   P2P_CONNECTION_MAX_WRITE_BUFFER_SIZE          = 64 * 1024 * 1024; // 64 MB
-const uint32_t P2P_DEFAULT_CONNECTIONS_COUNT                 = 8;
+const uint32_t P2P_DEFAULT_CONNECTIONS_COUNT                 = 10;
 const size_t   P2P_DEFAULT_WHITELIST_CONNECTIONS_PERCENT     = 70;
 const uint32_t P2P_DEFAULT_HANDSHAKE_INTERVAL                = 60;            // seconds
 const uint32_t P2P_DEFAULT_PACKET_MAX_SIZE                   = 50000000;      // 50000000 bytes maximum packet size
@@ -154,7 +124,6 @@ const uint32_t P2P_DEFAULT_CONNECTION_TIMEOUT                = 5000;          //
 const uint32_t P2P_DEFAULT_PING_CONNECTION_TIMEOUT           = 2000;          // 2 seconds
 const uint64_t P2P_DEFAULT_INVOKE_TIMEOUT                    = 60 * 2 * 1000; // 2 minutes
 const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000;          // 5 seconds
-
 const uint32_t P2P_FAILED_ADDR_FORGET_SECONDS                = (60*60);     //1 hour
 const uint32_t P2P_IP_BLOCKTIME                              = (60*60*24);  //24 hour
 const uint32_t P2P_IP_FAILS_BEFORE_BLOCK                     = 10;
@@ -168,7 +137,6 @@ const char* const SEED_NODES[] = {
   "194.32.76.162:39155" 
 };
 
-
 struct CheckpointData {
   uint32_t index;
   const char* blockId;
@@ -177,22 +145,19 @@ struct CheckpointData {
 const std::initializer_list<CheckpointData> CHECKPOINTS = { 
   {32000, "e7ae994ab205bbd069445da11b5c64fc7d9ca42a51a0071f7011f6db44d77cea"}
 , {64000, "1d0a8aad28fd92d17d214e552c7465d19e08cd7fa1f723d8de7f559d4f347302"}
-, {94177, "197ee8147ea9f9a9af7a743602ace0fa852a2da36b766b2f2803714fc5ed1f25"}  // Make sure we are on correct chain after adding ZAWY
+, {94177, "197ee8147ea9f9a9af7a743602ace0fa852a2da36b766b2f2803714fc5ed1f25"}  // Make sure we are on correct chain after adding ZAWY (DA1)
 , {96000, "caa5246b052594a879f3f14389c087b61c0d551e2286d83a18c17705402f8765"}
 , {128000, "04741eeb627a18862bf78184a3f17ace4a68188b74b87d449505984615a8e1a5"}
 , {160000, "793ef67bddc5cb70dd46da1e7ee8854495070197b4f724a732bca6e612eb46e0"}
 , {192000, "41c3f63ac25cc804dcd3e05903df36928df4ea5a15cfc409e106b2cd9efd9710"}
 , {224000, "1bf3a0336d5b76158030596844a50ca2da8fdc4c8d2f1eaff76d3763c5ff066b"}
-, {235971, "83ac894283cb5dc6206a9248d947c6c71e17883fac32e57cd1a4558f994b871d"} // Make sure we are on correct chain after adding LWMA
-, {243273, "1661d23c1baaf489805f68a8fd48736b31b87e8d2960225ff8d9bc1e2600753b"} // Make sure we are on correct chain after adding LWMA
+, {235971, "83ac894283cb5dc6206a9248d947c6c71e17883fac32e57cd1a4558f994b871d"} // Make sure we are on correct chain after adding LWMA (DA2)
+, {243273, "1661d23c1baaf489805f68a8fd48736b31b87e8d2960225ff8d9bc1e2600753b"} // Make sure we are on correct chain after V4
 , {256000, "93ba502fc37a17ca201e23495ce73d69243e1f80ba9a0db064ccfdda510c31ec"}
 , {288000, "a63d4eae1f0e66b97605d098711033b2e3f9c916b8a898b71b090f080d2f41f8"}
-, {301700, "cdfa72ca10f1b3bd0b394fbeb0fc229720693ba0391dbcba9150dcc3aab9997c"} // Just for faster sync...
+, {311189, "79d7605b0d81d8f8f38b2893990e40f37079ad692009e310f1e211fc67c139fa"} // Just for faster sync...
 };
 
 } // CryptoNote
 
 #define ALLOW_DEBUG_COMMANDS
-
-
-

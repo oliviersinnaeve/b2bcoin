@@ -65,7 +65,6 @@ DaemonCommandsHandler::DaemonCommandsHandler(CryptoNote::Core& core, CryptoNote:
   m_consoleHandler.setHandler("print_pool", boost::bind(&DaemonCommandsHandler::print_pool, this, _1), "Print transaction pool (long format)");
   m_consoleHandler.setHandler("print_pool_sh", boost::bind(&DaemonCommandsHandler::print_pool_sh, this, _1), "Print transaction pool (short format)");
   m_consoleHandler.setHandler("set_log", boost::bind(&DaemonCommandsHandler::set_log, this, _1), "set_log <level> - Change current log level, <level> is a number 0-4");
-  m_consoleHandler.setHandler("reset_peers", boost::bind(&DaemonCommandsHandler::resetPeers, this, _1), "Clean all peers");
 }
 
 //--------------------------------------------------------------------------------
@@ -96,12 +95,6 @@ bool DaemonCommandsHandler::help(const std::vector<std::string>& args) {
 //--------------------------------------------------------------------------------
 bool DaemonCommandsHandler::print_pl(const std::vector<std::string>& args) {
   m_srv.log_peerlist();
-  return true;
-}
-//--------------------------------------------------------------------------------
-bool DaemonCommandsHandler::resetPeers(const std::vector<std::string>& args) {
-  m_srv.getPeerlistManager().resetPeers();
-  std::cout << "=== White & Gray peer list cleaned ===" << ENDL;
   return true;
 }
 //--------------------------------------------------------------------------------
@@ -192,14 +185,14 @@ bool DaemonCommandsHandler::set_log(const std::vector<std::string>& args)
 //--------------------------------------------------------------------------------
 bool DaemonCommandsHandler::print_block_by_height(uint32_t height)
 {
-  if (height - 1 > m_core.getTopBlockIndex()) {
-    std::cout << "block wasn't found. Current block chain height: " << m_core.getTopBlockIndex() + 1 << ", requested: " << height << std::endl;
+  if (height > m_core.getTopBlockIndex()) {
+    std::cout << "block wasn't found. Current block chain height: " << m_core.getTopBlockIndex() << ", requested: " << height << std::endl;
     return false;
   }
 
-  auto hash = m_core.getBlockHashByIndex(height - 1);
+  auto hash = m_core.getBlockHashByIndex(height);
   std::cout << "block_id: " << hash << ENDL;
-  print_as_json(m_core.getBlockByIndex(height - 1));
+  print_as_json(m_core.getBlockByIndex(height));
 
   return true;
 }

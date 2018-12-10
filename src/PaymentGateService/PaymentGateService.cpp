@@ -218,7 +218,7 @@ void PaymentGateService::runInProcess(Logging::LoggerRef& log) {
   std::unique_ptr<CryptoNote::INode> node(new CryptoNote::InProcessNode(core, protocol, *dispatcher));
 
   std::error_code nodeInitStatus;
-  node->init([&nodeInitStatus](std::error_code ec) {
+  node->init([&log, &nodeInitStatus](std::error_code ec) {
     nodeInitStatus = ec;
   });
 

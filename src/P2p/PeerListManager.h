@@ -85,7 +85,6 @@ public:
 
   Peerlist& getWhite();
   Peerlist& getGray();
-  bool resetPeers();
 
 private:
   std::string m_config_folder;

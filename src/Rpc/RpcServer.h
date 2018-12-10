@@ -72,6 +72,7 @@ private:
   bool on_get_transactions(const COMMAND_RPC_GET_TRANSACTIONS::request& req, COMMAND_RPC_GET_TRANSACTIONS::response& res);
   bool on_send_raw_tx(const COMMAND_RPC_SEND_RAW_TX::request& req, COMMAND_RPC_SEND_RAW_TX::response& res);
   bool on_stop_daemon(const COMMAND_RPC_STOP_DAEMON::request& req, COMMAND_RPC_STOP_DAEMON::response& res);
+  bool on_get_payment_id(const COMMAND_RPC_GENERATE_PAYMENT_ID::request& req, COMMAND_RPC_GENERATE_PAYMENT_ID::response& res);
 
   // json rpc
   bool on_getblockcount(const COMMAND_RPC_GETBLOCKCOUNT::request& req, COMMAND_RPC_GETBLOCKCOUNT::response& res);
@@ -82,7 +83,8 @@ private:
   bool on_get_last_block_header(const COMMAND_RPC_GET_LAST_BLOCK_HEADER::request& req, COMMAND_RPC_GET_LAST_BLOCK_HEADER::response& res);
   bool on_get_block_header_by_hash(const COMMAND_RPC_GET_BLOCK_HEADER_BY_HASH::request& req, COMMAND_RPC_GET_BLOCK_HEADER_BY_HASH::response& res);
   bool on_get_block_header_by_height(const COMMAND_RPC_GET_BLOCK_HEADER_BY_HEIGHT::request& req, COMMAND_RPC_GET_BLOCK_HEADER_BY_HEIGHT::response& res);
-
+  bool on_get_peer_list(const COMMAND_RPC_GET_PEER_LIST::request& req, COMMAND_RPC_GET_PEER_LIST::response& res);
+  
   void fill_block_header_response(const BlockTemplate& blk, bool orphan_status, uint32_t index, const Crypto::Hash& hash, block_header_response& responce);
   RawBlockLegacy prepareRawBlockLegacy(BinaryArray&& blockBlob);
 
@@ -98,7 +100,7 @@ private:
   NodeServer& m_p2p;
   ICryptoNoteProtocolHandler& m_protocol;
   std::string m_fee_address;
-std::vector<std::string> m_cors_domains;
+  std::vector<std::string> m_cors_domains;
 };
 
 }

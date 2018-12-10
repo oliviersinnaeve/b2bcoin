@@ -1,4 +1,8 @@
 // Copyright (c) 2012-2017, The CryptoNote developers, The Bytecoin developers
+// Copyright (c) 2018, The BBSCoin Developers
+// Copyright (c) 2018, The Karbo Developers
+// Copyright (c) 2018, The TurtleCoin Developers
+// Copyright (c) 2018, The Newton Developers
 //
 // This file is part of Bytecoin.
 //
@@ -475,6 +479,29 @@ void WalletGreen::load(const std::string& path, const std::string& password, std
     }
   }
 
+  // Read all output keys cache
+   try {
+ 	  std::vector<AccountPublicAddress> subscriptionList;
+ 	  m_synchronizer.getSubscriptions(subscriptionList);
+ 	  for (auto& addr : subscriptionList) {
+ 		  auto sub = m_synchronizer.getSubscription(addr);
+ 		  if (sub != nullptr) {
+ 			  std::vector<TransactionOutputInformation> allTransfers;
+ 			  ITransfersContainer* container = &sub->getContainer();
+ 			  container->getOutputs(allTransfers, ITransfersContainer::IncludeAll);
+ 			  m_logger(INFO, BRIGHT_WHITE) << "Known Transfers " << allTransfers.size();
+ 			  for (auto& o : allTransfers) {
+ 				  if (o.type == TransactionTypes::OutputType::Key) {
+ 					  m_synchronizer.addPublicKeysSeen(addr, o.transactionHash, o.outputKey);
+ 				  }
+ 			  }
+ 		  }
+ 	  }
+   }
+   catch (const std::exception& e) {
+ 	  m_logger(ERROR, BRIGHT_RED) << "Failed to read output keys!! Continue without output keys: " << e.what();
+  }
+  
   m_blockchainSynchronizer.addObserver(this);
 
   initTransactionPool();
@@ -1724,7 +1751,7 @@ bool WalletGreen::updateWalletTransactionInfo(size_t transactionId, const Crypto
   auto it = std::next(txIdIndex.begin(), transactionId);
 
   bool updated = false;
-  bool r = txIdIndex.modify(it, [&info, totalAmount, &updated](WalletTransaction& transaction) {
+  bool r = txIdIndex.modify(it, [this, transactionId, &info, totalAmount, &updated](WalletTransaction& transaction) {
     if (transaction.blockHeight != info.blockHeight) {
       transaction.blockHeight = info.blockHeight;
       updated = true;
@@ -1997,7 +2024,7 @@ bool WalletGreen::eraseTransfersByAddress(size_t transactionId, size_t firstTran
 bool WalletGreen::eraseForeignTransfers(size_t transactionId, size_t firstTransferIdx, const std::unordered_set<std::string>& knownAddresses,
   bool eraseOutputTransfers) {
 
-  return eraseTransfers(transactionId, firstTransferIdx, [&knownAddresses, eraseOutputTransfers](bool isOutput, const std::string& transferAddress) {
+  return eraseTransfers(transactionId, firstTransferIdx, [this, &knownAddresses, eraseOutputTransfers](bool isOutput, const std::string& transferAddress) {
     return eraseOutputTransfers == isOutput && knownAddresses.count(transferAddress) == 0;
   });
 }
@@ -2716,7 +2743,7 @@ void WalletGreen::transactionDeleted(ITransfersSubscription* object, const Hash&
   deleteUnlockTransactionJob(transactionHash);
 
   bool updated = false;
-  m_transactions.get<TransactionIndex>().modify(it, [&updated](CryptoNote::WalletTransaction& tx) {
+  m_transactions.get<TransactionIndex>().modify(it, [this, &transactionHash, &updated](CryptoNote::WalletTransaction& tx) {
     if (tx.state == WalletTransactionState::CREATED || tx.state == WalletTransactionState::SUCCEEDED) {
       tx.state = WalletTransactionState::CANCELLED;
       updated = true;
