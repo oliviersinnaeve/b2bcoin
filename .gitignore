@@ -1,4 +1,6 @@
 *.iml
 /target/*
 .idea/*
-.build/*
+.DS_Store
+build/*
+external/rocksdb/*
