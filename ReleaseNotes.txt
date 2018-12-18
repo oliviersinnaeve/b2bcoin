@@ -1,3 +1,6 @@
+Release notes 2.0.1
+- Added more checkpoints to avoid some alt blocks
+
 Release notes 2.0.0 (MANDATORY) (Special thanks to Aiwe/Aivve at Karbo for this version)
 - Removed everything related to Forknote
 - Updated rocksdb
