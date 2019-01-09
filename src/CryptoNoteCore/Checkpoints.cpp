@@ -57,9 +57,10 @@ bool Checkpoints::checkBlock(uint32_t index, const Crypto::Hash &h,
       << "CHECKPOINT PASSED FOR INDEX " << index << " " << h;
     return true;
   } else {
-    logger(Logging::WARNING, BRIGHT_YELLOW) << "CHECKPOINT FAILED FOR HEIGHT " << index
-                                            << ". EXPECTED HASH: " << it->second
-                                            << ", FETCHED HASH: " << h;
+    logger(Logging::WARNING, BRIGHT_YELLOW) << "CHECKPOINT FAILED FOR HEIGHT: " << index
+                                            << "\nEXPECTED HASH: " << it->second
+                                            << "\nFETCHED HASH:  " << h
+                                            << "\n\nThis warning is here because someone is still using a old daemon version...\nIt is nothing to worry about, we have the correct checkpoint in the daemon.";
     return false;
   }
 }
