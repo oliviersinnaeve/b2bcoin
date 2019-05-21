@@ -1646,7 +1646,7 @@ bool Core::getBlockTemplate(BlockTemplate& b, const AccountPublicAddress& adr, c
   /* How many blocks we look in the past to calculate the median timestamp */
   uint64_t blockchain_timestamp_check_window;
 
-  if (height >= CryptoNote::parameters::LWMA_2_DIFFICULTY_BLOCK_INDEX)
+  if (height >= CryptoNote::parameters::UPGRADE_HEIGHT_V4_MTP)
   {
       blockchain_timestamp_check_window = CryptoNote::parameters::BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V3;
   }

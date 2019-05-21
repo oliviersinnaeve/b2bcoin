@@ -30,7 +30,7 @@ public:
 
   size_t timestampCheckWindow(uint32_t blockHeight) const
   {
-      if (blockHeight >= CryptoNote::parameters::LWMA_2_DIFFICULTY_BLOCK_INDEX_V3)
+      if (blockHeight >= CryptoNote::parameters::UPGRADE_HEIGHT_V4_MTP)
       {
           return CryptoNote::parameters::BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V3;
       }
@@ -42,7 +42,7 @@ public:
 
   uint64_t blockFutureTimeLimit(uint32_t blockHeight) const
   {
-      if (blockHeight >= CryptoNote::parameters::LWMA_2_DIFFICULTY_BLOCK_INDEX_V2)
+      if (blockHeight >= CryptoNote::parameters::UPGRADE_HEIGHT_V4)
       {
           return CryptoNote::parameters::CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT_V4;
       }
