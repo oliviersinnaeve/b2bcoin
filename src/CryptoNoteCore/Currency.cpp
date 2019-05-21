@@ -140,8 +140,6 @@ uint32_t Currency::upgradeHeight(uint8_t majorVersion) const {
     return m_upgradeHeightV3;
   } else if (majorVersion == BLOCK_MAJOR_VERSION_4) {
     return m_upgradeHeightV4;
-  } else if (majorVersion == BLOCK_MAJOR_VERSION_5) {
-    return m_upgradeHeightV5;
   } else {
     return static_cast<uint32_t>(-1);
   }
@@ -599,7 +597,6 @@ bool Currency::checkProofOfWork(const CachedBlock& block, uint64_t currentDiffic
   case BLOCK_MAJOR_VERSION_2:
   case BLOCK_MAJOR_VERSION_3:
   case BLOCK_MAJOR_VERSION_4:
-  case BLOCK_MAJOR_VERSION_5:
     return checkProofOfWorkV2(block, currentDiffic);
   }
 
