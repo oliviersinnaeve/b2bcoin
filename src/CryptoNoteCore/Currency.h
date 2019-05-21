@@ -32,7 +32,7 @@ public:
   {
       if (blockHeight >= CryptoNote::parameters::UPGRADE_HEIGHT_V4_MTP)
       {
-          return CryptoNote::parameters::BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V3;
+          return CryptoNote::parameters::BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V4;
       }
       else
       {
