@@ -21,7 +21,7 @@
 #include "Common/StdOutputStream.h"
 #include "Serialization/BinaryInputStreamSerializer.h"
 #include "Serialization/BinaryOutputStreamSerializer.h"
-#include "CryptoNoteCore/CryptoNoteSerialization.h"
+#include "Serialization/CryptoNoteSerialization.h"
 
 using namespace Common;
 
@@ -96,6 +96,10 @@ void SynchronizationState::detach(uint32_t height) {
 void SynchronizationState::addBlocks(const Crypto::Hash* blockHashes, uint32_t height, uint32_t count) {
   assert(blockHashes);
   auto size = m_blockchain.size();
+  if (size) {}
+  // Dummy fix for simplewallet or walletd when sync
+  if (height == 0)
+    height = 1;
   assert( size == height);
   m_blockchain.insert(m_blockchain.end(), blockHashes, blockHashes + count);
 }

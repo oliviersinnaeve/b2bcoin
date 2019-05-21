@@ -45,7 +45,6 @@ BlockchainWriteBatch& BlockchainWriteBatch::insertCachedTransaction(const Extend
 }
 
 BlockchainWriteBatch& BlockchainWriteBatch::insertPaymentId(const Crypto::Hash& transactionHash, const Crypto::Hash paymentId, uint32_t totalTxsCountForPaymentId) {
-  assert(totalTxsCountForPaymentId > 0);
   rawDataToInsert.emplace_back(DB::serialize(DB::PAYMENT_ID_TO_TX_HASH_PREFIX, paymentId, totalTxsCountForPaymentId));
   rawDataToInsert.emplace_back(DB::serialize(DB::PAYMENT_ID_TO_TX_HASH_PREFIX, std::make_pair(paymentId, totalTxsCountForPaymentId - 1), transactionHash));
   return *this;
@@ -158,16 +157,6 @@ BlockchainWriteBatch& BlockchainWriteBatch::removeClosestTimestampBlockIndex(uin
 
 BlockchainWriteBatch& BlockchainWriteBatch::removeTimestamp(uint64_t timestamp) {
   rawKeysToRemove.emplace_back(DB::serializeKey(DB::TIMESTAMP_TO_BLOCKHASHES_PREFIX, timestamp));
-  return *this;
-}
-
-BlockchainWriteBatch& BlockchainWriteBatch::removeKeyOutputAmounts(uint32_t keyOutputAmountsToRemoveCount, uint32_t totalKeyOutputAmountsCount) {
-  rawKeysToRemove.reserve(rawKeysToRemove.size() + keyOutputAmountsToRemoveCount);
-  rawDataToInsert.emplace_back(DB::serialize(DB::KEY_OUTPUT_AMOUNTS_COUNT_PREFIX, DB::KEY_OUTPUT_AMOUNTS_COUNT_KEY, totalKeyOutputAmountsCount));
-  for (uint32_t i = 0; i < keyOutputAmountsToRemoveCount; ++i) {
-    rawKeysToRemove.emplace_back(DB::serializeKey(DB::KEY_OUTPUT_AMOUNTS_COUNT_PREFIX, totalKeyOutputAmountsCount + i));
-  }
-
   return *this;
 }
 

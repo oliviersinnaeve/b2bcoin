@@ -17,7 +17,7 @@
 
 #include "WalletSerializationV2.h"
 
-#include "CryptoNoteCore/CryptoNoteSerialization.h"
+#include "Serialization/CryptoNoteSerialization.h"
 #include "Serialization/BinaryInputStreamSerializer.h"
 #include "Serialization/BinaryOutputStreamSerializer.h"
 
@@ -128,7 +128,6 @@ WalletSerializerV2::WalletSerializerV2(
   std::string& extra,
   uint32_t transactionSoftLockTime
 ) :
-  m_transfersObserver(transfersObserver),
   m_actualBalance(actualBalance),
   m_pendingBalance(pendingBalance),
   m_walletsContainer(walletsContainer),
@@ -137,8 +136,7 @@ WalletSerializerV2::WalletSerializerV2(
   m_transactions(transactions),
   m_transfers(transfers),
   m_uncommitedTransactions(uncommitedTransactions),
-  m_extra(extra),
-  m_transactionSoftLockTime(transactionSoftLockTime)
+  m_extra(extra)
 {
 }
 
@@ -149,7 +147,7 @@ void WalletSerializerV2::load(Common::IInputStream& source, uint8_t version) {
   s(saveLevelValue, "saveLevel");
   WalletSaveLevel saveLevel = static_cast<WalletSaveLevel>(saveLevelValue);
 
-  loadKeyListAndBanalces(s, saveLevel == WalletSaveLevel::SAVE_ALL);
+  loadKeyListAndBalances(s, saveLevel == WalletSaveLevel::SAVE_ALL);
 
   if (saveLevel == WalletSaveLevel::SAVE_KEYS_AND_TRANSACTIONS || saveLevel == WalletSaveLevel::SAVE_ALL) {
     loadTransactions(s);
@@ -171,7 +169,7 @@ void WalletSerializerV2::save(Common::IOutputStream& destination, WalletSaveLeve
   uint8_t saveLevelValue = static_cast<uint8_t>(saveLevel);
   s(saveLevelValue, "saveLevel");
 
-  saveKeyListAndBanalces(s, saveLevel == WalletSaveLevel::SAVE_ALL);
+  saveKeyListAndBalances(s, saveLevel == WalletSaveLevel::SAVE_ALL);
 
   if (saveLevel == WalletSaveLevel::SAVE_KEYS_AND_TRANSACTIONS || saveLevel == WalletSaveLevel::SAVE_ALL) {
     saveTransactions(s);
@@ -195,8 +193,8 @@ std::unordered_set<Crypto::PublicKey>& WalletSerializerV2::deletedKeys() {
   return m_deletedKeys;
 }
 
-void WalletSerializerV2::loadKeyListAndBanalces(CryptoNote::ISerializer& serializer, bool saveCache) {
-  size_t walletCount;
+void WalletSerializerV2::loadKeyListAndBalances(CryptoNote::ISerializer& serializer, bool saveCache) {
+  uint64_t walletCount;
   serializer(walletCount, "walletCount");
 
   m_actualBalance = 0;
@@ -239,8 +237,8 @@ void WalletSerializerV2::loadKeyListAndBanalces(CryptoNote::ISerializer& seriali
   }
 }
 
-void WalletSerializerV2::saveKeyListAndBanalces(CryptoNote::ISerializer& serializer, bool saveCache) {
-  auto walletCount = m_walletsContainer.get<RandomAccessIndex>().size();
+void WalletSerializerV2::saveKeyListAndBalances(CryptoNote::ISerializer& serializer, bool saveCache) {
+  uint64_t walletCount = m_walletsContainer.get<RandomAccessIndex>().size();
   serializer(walletCount, "walletCount");
   for (auto wallet : m_walletsContainer.get<RandomAccessIndex>()) {
     serializer(wallet.spendPublicKey, "spendPublicKey");
@@ -274,7 +272,7 @@ void WalletSerializerV2::loadTransactions(CryptoNote::ISerializer& serializer) {
     tx.extra = dto.extra;
     tx.isBase = dto.isBase;
 
-    m_transactions.get<RandomAccessIndex>().emplace_back(std::move(tx));
+    m_transactions.get<RandomAccessIndex>().push_back(std::move(tx));
   }
 }
 
@@ -359,7 +357,7 @@ void WalletSerializerV2::loadUnlockTransactionsJobs(CryptoNote::ISerializer& ser
       job.transactionHash = dto.transactionHash;
       job.container = walletIt->container;
 
-      index.emplace(std::move(job));
+      index.insert(std::move(job));
     }
   }
 }

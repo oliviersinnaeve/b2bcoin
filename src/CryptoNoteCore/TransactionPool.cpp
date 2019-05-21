@@ -1,25 +1,13 @@
 // Copyright (c) 2012-2017, The CryptoNote developers, The Bytecoin developers
+// Copyright (c) 2018-2019, The TurtleCoin Developers
 //
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Please see the included LICENSE file for more information.
 
 #include "TransactionPool.h"
 
 #include "Common/int-util.h"
 #include "CryptoNoteBasicImpl.h"
-#include "CryptoNoteCore/TransactionExtra.h"
+#include "Common/TransactionExtra.h"
 
 namespace CryptoNote {
 
@@ -57,7 +45,7 @@ size_t TransactionPool::PaymentIdHasher::operator() (const boost::optional<Crypt
   return std::hash<Crypto::Hash>{}(*paymentId);
 }
 
-TransactionPool::TransactionPool(Logging::ILogger& logger) :
+TransactionPool::TransactionPool(std::shared_ptr<Logging::ILogger> logger) :
   transactionHashIndex(transactions.get<TransactionHashTag>()),
   transactionCostIndex(transactions.get<TransactionCostTag>()),
   paymentIdIndex(transactions.get<PaymentIdTag>()),
@@ -85,7 +73,7 @@ bool TransactionPool::pushTransaction(CachedTransaction&& transaction, Transacti
   mergeStates(poolState, transactionState);
 
   logger(Logging::DEBUGGING) << "pushed transaction " << pendingTx.getTransactionHash() << " to pool";
-  return transactionHashIndex.emplace(std::move(pendingTx)).second;
+  return transactionHashIndex.insert(std::move(pendingTx)).second;
 }
 
 const CachedTransaction& TransactionPool::getTransaction(const Crypto::Hash& hash) const {
@@ -139,6 +127,29 @@ std::vector<CachedTransaction> TransactionPool::getPoolTransactions() const {
   }
 
   return result;
+}
+
+std::tuple<std::vector<CachedTransaction>, std::vector<CachedTransaction>> TransactionPool::getPoolTransactionsForBlockTemplate() const
+{
+  std::vector<CachedTransaction> regularTransactions;
+
+  std::vector<CachedTransaction> fusionTransactions;
+
+  for (const auto &transaction : transactionCostIndex)
+  {
+    uint64_t transactionFee = transaction.cachedTransaction.getTransactionFee();
+
+    if(transactionFee != 0)
+    {
+      regularTransactions.emplace_back(transaction.cachedTransaction);
+    }
+    else
+    {
+      fusionTransactions.emplace_back(transaction.cachedTransaction);
+    }
+  }
+
+  return {regularTransactions, fusionTransactions};
 }
 
 uint64_t TransactionPool::getTransactionReceiveTime(const Crypto::Hash& hash) const {

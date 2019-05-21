@@ -19,8 +19,8 @@
 
 #include "Common/StringView.h"
 #include "Currency.h"
-#include "Difficulty.h"
 #include "IBlockchainCache.h"
+#include "CryptoNoteCore/UpgradeManager.h"
 #include <IDataBase.h>
 #include <CryptoNoteCore/BlockchainReadBatch.h>
 #include <CryptoNoteCore/BlockchainWriteBatch.h>
@@ -46,9 +46,9 @@ public:
    * BlockchainCache objects as children are supported.
    */
   DatabaseBlockchainCache(const Currency& currency, IDataBase& dataBase,
-                          IBlockchainCacheFactory& blockchainCacheFactory, Logging::ILogger& logger);
+                          IBlockchainCacheFactory& blockchainCacheFactory, std::shared_ptr<Logging::ILogger> logger);
 
-  static bool checkDBSchemeVersion(IDataBase& dataBase, Logging::ILogger& logger);
+  static bool checkDBSchemeVersion(IDataBase& dataBase, std::shared_ptr<Logging::ILogger> logger);
 
   /*
    * This methods splits cache, upper part (ie blocks with indexes larger than splitBlockIndex)
@@ -58,7 +58,7 @@ public:
   std::unique_ptr<IBlockchainCache> split(uint32_t splitBlockIndex) override;
   void pushBlock(const CachedBlock& cachedBlock, const std::vector<CachedTransaction>& cachedTransactions,
                  const TransactionValidatorState& validatorState, size_t blockSize, uint64_t generatedCoins,
-                 Difficulty blockDifficulty, RawBlock&& rawBlock) override;
+                 uint64_t blockDifficulty, RawBlock&& rawBlock) override;
   virtual PushedBlockInfo getPushedBlockInfo(uint32_t index) const override;
   bool checkIfSpent(const Crypto::KeyImage& keyImage, uint32_t blockIndex) const override;
   bool checkIfSpent(const Crypto::KeyImage& keyImage) const override;
@@ -92,14 +92,14 @@ public:
   std::vector<uint64_t> getLastBlocksSizes(size_t count) const override;
   std::vector<uint64_t> getLastBlocksSizes(size_t count, uint32_t blockIndex, UseGenesis) const override;
 
-  std::vector<Difficulty> getLastCumulativeDifficulties(size_t count, uint32_t blockIndex, UseGenesis) const override;
-  std::vector<Difficulty> getLastCumulativeDifficulties(size_t count) const override;
+  std::vector<uint64_t> getLastCumulativeDifficulties(size_t count, uint32_t blockIndex, UseGenesis) const override;
+  std::vector<uint64_t> getLastCumulativeDifficulties(size_t count) const override;
 
-  Difficulty getDifficultyForNextBlock() const override;
-  Difficulty getDifficultyForNextBlock(uint32_t blockIndex) const override;
+  uint64_t getDifficultyForNextBlock() const override;
+  uint64_t getDifficultyForNextBlock(uint32_t blockIndex) const override;
 
-  virtual Difficulty getCurrentCumulativeDifficulty() const override;
-  virtual Difficulty getCurrentCumulativeDifficulty(uint32_t blockIndex) const override;
+  virtual uint64_t getCurrentCumulativeDifficulty() const override;
+  virtual uint64_t getCurrentCumulativeDifficulty(uint32_t blockIndex) const override;
 
   uint64_t getAlreadyGeneratedCoins() const override;
   uint64_t getAlreadyGeneratedCoins(uint32_t blockIndex) const override;
@@ -116,8 +116,14 @@ public:
   virtual uint32_t getStartBlockIndex() const override;
 
   virtual size_t getKeyOutputsCountForAmount(uint64_t amount, uint32_t blockIndex) const override;
+  
+  std::tuple<bool, uint64_t> getBlockHeightForTimestamp(uint64_t timestamp) const override;
 
   virtual uint32_t getTimestampLowerBoundBlockIndex(uint64_t timestamp) const override;
+
+  virtual std::unordered_map<Crypto::Hash, std::vector<uint64_t>> getGlobalIndexes(
+    const std::vector<Crypto::Hash> transactionHashes) const override;
+
   virtual bool getTransactionGlobalIndexes(const Crypto::Hash& transactionHash,
                                            std::vector<uint32_t>& globalIndexes) const override;
   virtual size_t getTransactionCount() const override;
@@ -156,6 +162,10 @@ public:
 
   virtual std::vector<Crypto::Hash> getTransactionHashesByPaymentId(const Crypto::Hash& paymentId) const override;
   virtual std::vector<Crypto::Hash> getBlockHashesByTimestamps(uint64_t timestampBegin, size_t secondsCount) const override;
+
+  virtual std::vector<RawBlock> getBlocksByHeight(
+    const uint64_t startHeight,
+    const uint64_t endHeight) const override;
 
 private:
   const Currency& currency;
@@ -205,7 +215,7 @@ private:
   void requestDeleteKeyOutputsAmount(BlockchainWriteBatch& writeBatch, IBlockchainCache::Amount amount, IBlockchainCache::GlobalOutputIndex boundary, uint32_t outputsCount);
   void requestRemoveTimestamp(BlockchainWriteBatch& batch, uint64_t timestamp, const Crypto::Hash& blockHash);
 
-  uint8_t getBlockMajorVersionForHeight(uint32_t height) const;
+uint8_t getBlockMajorVersionForHeight(uint32_t height) const;
   uint64_t getCachedTransactionsCount() const;
 
   std::vector<CachedBlockInfo> getLastCachedUnits(uint32_t blockIndex, size_t count, UseGenesis useGenesis) const;

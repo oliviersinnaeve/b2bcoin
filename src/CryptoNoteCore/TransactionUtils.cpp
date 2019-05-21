@@ -22,7 +22,7 @@
 #include "crypto/crypto.h"
 #include "CryptoNoteCore/Account.h"
 #include "CryptoNoteFormatUtils.h"
-#include "TransactionExtra.h"
+#include "Common/TransactionExtra.h"
 
 using namespace Crypto;
 
@@ -112,12 +112,6 @@ const TransactionOutput& getOutputChecked(const CryptoNote::TransactionPrefix& t
   }
 
   return output;
-}
-
-bool isOutToKey(const Crypto::PublicKey& spendPublicKey, const Crypto::PublicKey& outKey, const Crypto::KeyDerivation& derivation, size_t keyIndex) {
-  Crypto::PublicKey pk;
-  derive_public_key(derivation, keyIndex, spendPublicKey, pk);
-  return pk == outKey;
 }
 
 bool findOutputsToAccount(const CryptoNote::TransactionPrefix& transaction, const AccountPublicAddress& addr,
