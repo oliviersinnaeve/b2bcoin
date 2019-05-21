@@ -912,14 +912,14 @@ void CryptoNoteProtocolHandler::relayBlock(NOTIFY_NEW_BLOCK::request& arg) {
 
   // sort the peers into their support categories.
   m_p2p->for_each_connection([this, &liteBlockConnections, &normalBlockConnections](const CryptoNoteConnectionContext& ctx, uint64_t peerId){
-    if (ctx.version >= P2P_LITE_BLOCKS_PROPOGATION_VERSION) {
-      logger(Logging::DEBUGGING) << ctx << "Peer supports lite-blocks... adding peer to lite block list";
-      liteBlockConnections.push_back(ctx.m_connection_id);
-    }
-    else {
-      logger(Logging::DEBUGGING) << ctx << "Peer doesn't support lite-blocks... adding peer to normal block list";
+    //if (ctx.version >= P2P_LITE_BLOCKS_PROPOGATION_VERSION) {
+    //  logger(Logging::DEBUGGING) << ctx << "Peer supports lite-blocks... adding peer to lite block list";
+    //  liteBlockConnections.push_back(ctx.m_connection_id);
+    //}
+    //else {
+      logger(Logging::DEBUGGING) << ctx << "Adding peer to normal block list";
       normalBlockConnections.push_back(ctx.m_connection_id);
-    }
+    //}
   });
 
   // first send lite one's.. coz they are faster
