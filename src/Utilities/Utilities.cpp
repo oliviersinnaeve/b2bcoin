@@ -187,7 +187,6 @@ uint64_t getCurrentTimestampAdjusted()
     std::initializer_list<uint64_t> limits =
     {
         CryptoNote::parameters::CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT,
-        CryptoNote::parameters::CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT_V3,
         CryptoNote::parameters::CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT_V4
     };
 
