@@ -83,16 +83,6 @@ bool Currency::generateGenesisBlock() {
   return true;
 }
 
-size_t Currency::difficultyWindowByBlockVersion(uint8_t blockMajorVersion) const {
-  if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
-    return m_difficultyWindow;
-  } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
-    return CryptoNote::parameters::DIFFICULTY_WINDOW_V2;
-  } else {
-    return CryptoNote::parameters::DIFFICULTY_WINDOW_V1;
-  }
-}
-
 size_t Currency::difficultyLagByBlockVersion(uint8_t blockMajorVersion) const {
   if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
     return m_difficultyLag;
@@ -110,26 +100,6 @@ size_t Currency::difficultyCutByBlockVersion(uint8_t blockMajorVersion) const {
     return CryptoNote::parameters::DIFFICULTY_CUT_V2;
   } else {
     return CryptoNote::parameters::DIFFICULTY_CUT_V1;
-  }
-}
-
-size_t Currency::difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion, uint32_t height) const
-{
-    if (height >= CryptoNote::parameters::LWMA_2_DIFFICULTY_BLOCK_INDEX)
-    {
-        return CryptoNote::parameters::DIFFICULTY_BLOCKS_COUNT_V3;
-    }
-
-    return difficultyWindowByBlockVersion(blockMajorVersion) + difficultyLagByBlockVersion(blockMajorVersion);
-}
-
-size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
-  if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
-    return m_blockGrantedFullRewardZone;
-  } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
-    return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2;
-  } else {
-    return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
   }
 }
 

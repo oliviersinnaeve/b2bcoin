@@ -58,7 +58,15 @@ public:
 
   size_t rewardBlocksWindow() const { return m_rewardBlocksWindow; }
   size_t blockGrantedFullRewardZone() const { return m_blockGrantedFullRewardZone; }
-  size_t blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const;
+  size_t blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
+      return m_blockGrantedFullRewardZone;
+    } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
+      return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2;
+    } else {
+      return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
+    }
+  }
   size_t minerTxBlobReservedSize() const { return m_minerTxBlobReservedSize; }
 
   size_t numberOfDecimalPlaces() const { return m_numberOfDecimalPlaces; }
@@ -84,13 +92,24 @@ public:
 
   uint64_t difficultyTarget() const { return m_difficultyTarget; }
   size_t difficultyWindow() const { return m_difficultyWindow; }
-size_t difficultyWindowByBlockVersion(uint8_t blockMajorVersion) const;
+size_t difficultyWindowByBlockVersion(uint8_t blockMajorVersion) const {
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_4) {
+      return CryptoNote::parameters::DIFFICULTY_WINDOW_V4;
+    }
+    return CryptoNote::parameters::DIFFICULTY_WINDOW;
+  }
   size_t difficultyLag() const { return m_difficultyLag; }
 size_t difficultyLagByBlockVersion(uint8_t blockMajorVersion) const;
   size_t difficultyCut() const { return m_difficultyCut; }
 size_t difficultyCutByBlockVersion(uint8_t blockMajorVersion) const;
   size_t difficultyBlocksCount() const { return m_difficultyWindow + m_difficultyLag; }
-size_t difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion, uint32_t height) const;
+size_t difficultyBlocksCountByBlockVersion(uint8_t blockMajorVersion, uint32_t height) const {
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_4) {
+      return difficultyWindowByBlockVersion(blockMajorVersion);
+    } else {
+      return difficultyWindowByBlockVersion(blockMajorVersion) + m_difficultyLag;
+    }
+  } 
 
   size_t maxBlockSizeInitial() const { return m_maxBlockSizeInitial; }
   uint64_t maxBlockSizeGrowthSpeedNumerator() const { return m_maxBlockSizeGrowthSpeedNumerator; }
