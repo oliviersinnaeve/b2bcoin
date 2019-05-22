@@ -53,6 +53,9 @@ private:
   System::Dispatcher& m_dispatcher;
   System::TcpConnection m_connection;
   std::unique_ptr<System::TcpStreambuf> m_streamBuf;
+  
+  /* Don't send two requests at once */
+  std::mutex m_mutex;
 };
 
 template <typename Request, typename Response>
@@ -60,6 +63,7 @@ void invokeJsonCommand(HttpClient& client, const std::string& url, const Request
   HttpRequest hreq;
   HttpResponse hres;
 
+  hreq.addHeader("Content-Type", "application/json");
   hreq.setUrl(url);
   hreq.setBody(storeToJson(req));
   client.request(hreq, hres);

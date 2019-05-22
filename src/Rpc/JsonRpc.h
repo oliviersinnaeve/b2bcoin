@@ -86,9 +86,9 @@ public:
     if (psReq.contains("id")) {
       id = psReq("id");
     }
-
-	  if (psReq.contains("password")) {
- 		  password = psReq("password");
+	
+	if (psReq.contains("password")) {
+		password = psReq("password");
     }
 
     return true;
@@ -118,9 +118,9 @@ public:
   const OptionalId& getId() const {
     return id;
   }
-
+  
   const OptionalPassword& getPassword() const {
- 	  return password;
+	  return password;
   }
 
   std::string getBody() {

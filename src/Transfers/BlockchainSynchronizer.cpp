@@ -36,10 +36,6 @@ namespace {
 
 const int RETRY_TIMEOUT = 5;
 
-std::ostream& operator<<(std::ostream& os, const CryptoNote::IBlockchainConsumer* consumer) {
-  return os << "0x" << std::setw(8) << std::setfill('0') << std::hex << reinterpret_cast<uintptr_t>(consumer) << std::dec << std::setfill(' ');
-}
-
 class TransactionReaderListFormatter {
 public:
   explicit TransactionReaderListFormatter(const std::vector<std::unique_ptr<CryptoNote::ITransactionReader>>& transactionList) :
@@ -72,7 +68,7 @@ private:
 
 namespace CryptoNote {
 
-BlockchainSynchronizer::BlockchainSynchronizer(INode& node, Logging::ILogger& logger, const Hash& genesisBlockHash) :
+BlockchainSynchronizer::BlockchainSynchronizer(INode& node, std::shared_ptr<Logging::ILogger> logger, const Hash& genesisBlockHash) :
   m_logger(logger, "BlockchainSynchronizer"),
   m_node(node),
   m_genesisBlockHash(genesisBlockHash),
@@ -542,9 +538,8 @@ void BlockchainSynchronizer::processBlocks(GetBlocksResponse& response) {
       if (m_node.getKnownBlockCount() != m_node.getLocalBlockCount()) {
         m_logger(DEBUGGING) << "Blockchain updated, resume blockchain synchronization";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      } else {
-        break;
-      }
+      } 
+      break;
 
     case UpdateConsumersResult::addedNewBlocks:
       setFutureState(State::blockchainSync);
@@ -579,8 +574,14 @@ BlockchainSynchronizer::UpdateConsumersResult BlockchainSynchronizer::updateCons
       kv.second->detach(result.detachHeight);
     }
 
+    if (result.newBlockHeight == 1) {
+      result.newBlockHeight = 0;
+    }
     if (result.hasNewBlocks) {
       uint32_t startOffset = result.newBlockHeight - interval.startHeight;
+    if (result.newBlockHeight == 0) {
+      startOffset = 0;
+    }
       uint32_t blockCount = static_cast<uint32_t>(blocks.size()) - startOffset;
       // update consumer
       m_logger(DEBUGGING) << "Adding blocks to consumer, consumer " << kv.first << ", start index " << result.newBlockHeight << ", count " << blockCount;
@@ -651,7 +652,7 @@ void BlockchainSynchronizer::removeOutdatedTransactions() {
       }
     }
   } else {
-    m_logger(ERROR, BRIGHT_RED) << "Failed to query outdated pool transaction: " << ec << ", " << ec.message();
+    m_logger(DEBUGGING, BRIGHT_RED) << "Failed to query outdated pool transaction: " << ec << ", " << ec.message();
   }
 
   if (!ec) {

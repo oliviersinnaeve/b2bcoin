@@ -31,9 +31,8 @@
 #include "BlockchainStorage.h"
 #include "Common/StringView.h"
 #include "Currency.h"
-#include "Difficulty.h"
 #include "IBlockchainCache.h"
-#include "CryptoNoteCore/UpgradeManager.h" 
+#include "CryptoNoteCore/UpgradeManager.h"
 
 namespace CryptoNote {
 
@@ -61,7 +60,7 @@ struct CachedTransactionInfo {
 struct CachedBlockInfo {
   Crypto::Hash blockHash;
   uint64_t timestamp;
-  Difficulty cumulativeDifficulty;
+  uint64_t cumulativeDifficulty;
   uint64_t alreadyGeneratedCoins;
   uint64_t alreadyGeneratedTransactions;
   uint32_t blockSize;
@@ -92,7 +91,7 @@ class DatabaseBlockchainCache;
 
 class BlockchainCache : public IBlockchainCache {
 public:
-  BlockchainCache(const std::string& filename, const Currency& currency, Logging::ILogger& logger, IBlockchainCache* parent, uint32_t startIndex = 0);
+  BlockchainCache(const std::string& filename, const Currency& currency, std::shared_ptr<Logging::ILogger> logger, IBlockchainCache* parent, uint32_t startIndex = 0);
 
   //Returns upper part of segment. [this] remains lower part.
   //All of indexes on blockIndex == splitBlockIndex belong to upper part
@@ -102,7 +101,7 @@ public:
     const TransactionValidatorState& validatorState,
     size_t blockSize,
     uint64_t generatedCoins,
-    Difficulty blockDifficulty,
+    uint64_t blockDifficulty,
     RawBlock&& rawBlock) override;
 
   virtual PushedBlockInfo getPushedBlockInfo(uint32_t index) const override;
@@ -132,14 +131,14 @@ public:
   std::vector<uint64_t> getLastBlocksSizes(size_t count) const override;
   std::vector<uint64_t> getLastBlocksSizes(size_t count, uint32_t blockIndex, UseGenesis) const override;
 
-  std::vector<Difficulty> getLastCumulativeDifficulties(size_t count, uint32_t blockIndex, UseGenesis) const override;
-  std::vector<Difficulty> getLastCumulativeDifficulties(size_t count) const override;
+  std::vector<uint64_t> getLastCumulativeDifficulties(size_t count, uint32_t blockIndex, UseGenesis) const override;
+  std::vector<uint64_t> getLastCumulativeDifficulties(size_t count) const override;
 
-  Difficulty getDifficultyForNextBlock() const override;
-  Difficulty getDifficultyForNextBlock(uint32_t blockIndex) const override;
+  uint64_t getDifficultyForNextBlock() const override;
+  uint64_t getDifficultyForNextBlock(uint32_t blockIndex) const override;
 
-  virtual Difficulty getCurrentCumulativeDifficulty() const override;
-  virtual Difficulty getCurrentCumulativeDifficulty(uint32_t blockIndex) const override;
+  virtual uint64_t getCurrentCumulativeDifficulty() const override;
+  virtual uint64_t getCurrentCumulativeDifficulty(uint32_t blockIndex) const override;
 
   uint64_t getAlreadyGeneratedCoins() const override;
   uint64_t getAlreadyGeneratedCoins(uint32_t blockIndex) const override;
@@ -155,6 +154,8 @@ public:
   virtual uint32_t getStartBlockIndex() const override;
 
   virtual size_t getKeyOutputsCountForAmount(uint64_t amount, uint32_t blockIndex) const override;
+
+  std::tuple<bool, uint64_t> getBlockHeightForTimestamp(uint64_t timestamp) const override;
 
   virtual uint32_t getTimestampLowerBoundBlockIndex(uint64_t timestamp) const override;
   virtual bool getTransactionGlobalIndexes(const Crypto::Hash& transactionHash, std::vector<uint32_t>& globalIndexes) const override;
@@ -174,6 +175,10 @@ public:
   void getRawTransactions(const std::vector<Crypto::Hash> &transactions,
     std::vector<BinaryArray> &foundTransactions,
     std::vector<Crypto::Hash> &missedTransactions) const override;
+
+  virtual std::unordered_map<Crypto::Hash, std::vector<uint64_t>> getGlobalIndexes(
+    const std::vector<Crypto::Hash> transactionHashes) const override;
+
   virtual RawBlock getBlockByIndex(uint32_t index) const override;
   virtual BinaryArray getRawTransaction(uint32_t blockIndex, uint32_t transactionIndex) const override;
   virtual std::vector<Crypto::Hash> getTransactionHashes() const override;
@@ -184,6 +189,10 @@ public:
 
   virtual std::vector<Crypto::Hash> getTransactionHashesByPaymentId(const Crypto::Hash& paymentId) const override;
   virtual std::vector<Crypto::Hash> getBlockHashesByTimestamps(uint64_t timestampBegin, size_t secondsCount) const override;
+  
+  virtual std::vector<RawBlock> getBlocksByHeight(
+    const uint64_t startHeight,
+    const uint64_t endHeight) const override;
 
 private:
 
@@ -306,7 +315,7 @@ private:
 
   TransactionValidatorState fillOutputsSpentByBlock(uint32_t blockIndex) const;
 
-  uint8_t getBlockMajorVersionForHeight(uint32_t height) const;
+uint8_t getBlockMajorVersionForHeight(uint32_t height) const;
   void fixChildrenParent(IBlockchainCache* p);
 
   void doPushBlock(const CachedBlock& cachedBlock,
@@ -314,7 +323,7 @@ private:
     const TransactionValidatorState& validatorState,
     size_t blockSize,
     uint64_t generatedCoins,
-    Difficulty blockDifficulty,
+    uint64_t blockDifficulty,
     RawBlock&& rawBlock);
 };
 

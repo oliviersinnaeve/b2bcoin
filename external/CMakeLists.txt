@@ -1,23 +1,25 @@
 set(UPNPC_BUILD_STATIC ON CACHE BOOL "Build static library")
 set(UPNPC_BUILD_SHARED OFF CACHE BOOL "Build shared library")
 set(UPNPC_BUILD_TESTS OFF CACHE BOOL "Build test executables")
+set(WITH_MD_LIBRARY OFF CACHE BOOL "Code Generation for static library")
 
 add_subdirectory(miniupnpc)
-add_subdirectory(gtest)
+add_subdirectory(cryptopp)
+add_subdirectory(sqlite3)
+add_subdirectory(lz4)
 
 if(MSVC)
-    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} ../version)
     add_subdirectory(rocksDB EXCLUDE_FROM_ALL)
-    set_property(TARGET upnpc-static gtest gtest_main rocksdblib PROPERTY FOLDER "external")
+    set_property(TARGET upnpc-static cryptopp-static rocksdb sqlite3 lz4 PROPERTY FOLDER "external")
 elseif(NOT MSVC)
-    set_property(TARGET upnpc-static gtest gtest_main PROPERTY FOLDER "external")
+    set_property(TARGET upnpc-static cryptopp-static sqlite3 lz4 PROPERTY FOLDER "external")
     add_custom_target(
        rocksdb
-       COMMAND make static_lib
-       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rocksdb/
+       COMMAND $(MAKE) rocksdb
+       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/rocksdb
     )
     add_library(rocksdblib STATIC IMPORTED GLOBAL)
-    set_target_properties(rocksdblib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/rocksdb/librocksdb.a)
+    set_target_properties(rocksdblib PROPERTIES IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/rocksdb/librocksdb.a)
     add_dependencies(rocksdblib rocksdb)
 endif()
 

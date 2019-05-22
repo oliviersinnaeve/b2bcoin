@@ -21,6 +21,9 @@
 #include <functional>
 #include <queue>
 #include <stack>
+#ifndef __GLIBC__
+#include <bits/reg.h>
+#endif
 
 namespace System {
 
@@ -81,13 +84,15 @@ public:
   void pushTimer(int timer);
 
 #ifdef __x86_64__
-# if __WORDSIZE == 64
-  static const int SIZEOF_PTHREAD_MUTEX_T = 40;
-# else
-  static const int SIZEOF_PTHREAD_MUTEX_T = 32;
-# endif
+    # if __WORDSIZE == 64
+    static const int SIZEOF_PTHREAD_MUTEX_T = 40;
+    # else
+    static const int SIZEOF_PTHREAD_MUTEX_T = 32;
+    # endif
+#elif __aarch64__
+static const int SIZEOF_PTHREAD_MUTEX_T = 48;
 #else
-  static const int SIZEOF_PTHREAD_MUTEX_T = 24;
+static const int SIZEOF_PTHREAD_MUTEX_T = 24;
 #endif
 
 private:

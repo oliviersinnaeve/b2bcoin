@@ -1,23 +1,13 @@
 // Copyright (c) 2012-2017, The CryptoNote developers, The Bytecoin developers
+// Copyright (c) 2018-2019, The TurtleCoin Developers
 //
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Please see the included LICENSE file for more information.
 
 #include "P2pNode.h"
 
 #include <boost/uuid/uuid_io.hpp>
+
+#include <random>
 
 #include <System/ContextGroupTimeout.h>
 #include <System/InterruptedException.h>
@@ -26,6 +16,8 @@
 #include <System/TcpConnection.h>
 #include <System/TcpConnector.h>
 
+#include <config/CryptoNoteConfig.h>
+#include <crypto/random.h>
 #include "Common/StdInputStream.h"
 #include "Common/StdOutputStream.h"
 #include "Serialization/BinaryInputStreamSerializer.h"
@@ -35,7 +27,6 @@
 #include "P2pConnectionProxy.h"
 #include "P2pContext.h"
 #include "P2pContextOwner.h"
-#include "P2pNetworks.h"
 
 using namespace Common;
 using namespace Logging;
@@ -75,7 +66,7 @@ private:
       return 0;
     }
 
-    size_t x = Crypto::rand<size_t>() % (maxIndex + 1);
+    size_t x = Random::randomValue<size_t>() % (maxIndex + 1);
     return (x * x * x) / (maxIndex * maxIndex);
   }
 
@@ -116,12 +107,11 @@ void doWithTimeoutAndThrow(System::Dispatcher& dispatcher, std::chrono::nanoseco
 
 }
 
-P2pNode::P2pNode(const P2pNodeConfig& cfg, Dispatcher& dispatcher, Logging::ILogger& log, const Crypto::Hash& genesisHash, PeerIdType peerId) :
+P2pNode::P2pNode(const P2pNodeConfig& cfg, Dispatcher& dispatcher, std::shared_ptr<Logging::ILogger> log, const Crypto::Hash& genesisHash, uint64_t peerId) :
   logger(log, "P2pNode:" + std::to_string(cfg.getBindPort())),
   m_stopRequested(false),
   m_cfg(cfg),
   m_myPeerId(peerId),
-  m_genesisHash(genesisHash),
   m_genesisPayload(CORE_SYNC_DATA{ 1, genesisHash }),
   m_dispatcher(dispatcher),
   workingContextGroup(dispatcher),
@@ -139,21 +129,6 @@ P2pNode::~P2pNode() {
   assert(m_connectionQueue.empty());
 }
 
-std::unique_ptr<IP2pConnection> P2pNode::receiveConnection() {
-  while (m_connectionQueue.empty()) {
-    m_queueEvent.wait();
-    m_queueEvent.clear();
-    if (m_stopRequested) {
-      throw InterruptedException();
-    }
-  }
-
-  auto connection = std::move(m_connectionQueue.front());
-  m_connectionQueue.pop_front();
-
-  return connection;
-}
-
 void P2pNode::start() {
   workingContextGroup.spawn(std::bind(&P2pNode::acceptLoop, this));
   workingContextGroup.spawn(std::bind(&P2pNode::connectorLoop, this));
@@ -166,7 +141,7 @@ void P2pNode::stop() {
 
   m_stopRequested = true;
   // clear prepared connections
-  m_connectionQueue.clear(); 
+  m_connectionQueue.clear();
   // stop processing
   m_queueEvent.set();
   workingContextGroup.interrupt();
@@ -200,7 +175,7 @@ void P2pNode::acceptLoop() {
   while (!m_stopRequested) {
     try {
       auto connection = m_listener.accept();
-      auto ctx = new P2pContext(m_dispatcher, std::move(connection), true, 
+      auto ctx = new P2pContext(m_dispatcher, std::move(connection), true,
         getRemoteAddress(connection), m_cfg.getTimedSyncInterval(), getGenesisPayload());
       logger(INFO) << "Incoming connection from " << ctx->getRemoteAddress();
       workingContextGroup.spawn([this, ctx] {
@@ -209,7 +184,7 @@ void P2pNode::acceptLoop() {
     } catch (InterruptedException&) {
       break;
     } catch (const std::exception& e) {
-      logger(WARNING) << "Exception in acceptLoop: " << e.what();
+      logger(DEBUGGING) << "Exception in acceptLoop: " << e.what();
     }
   }
 
@@ -238,7 +213,7 @@ void P2pNode::connectPeers() {
   // if white peer list is empty, get peers from seeds
   if (m_peerlist.get_white_peers_count() == 0 && !m_cfg.getSeedNodes().empty()) {
     auto seedNodes = m_cfg.getSeedNodes();
-    std::random_shuffle(seedNodes.begin(), seedNodes.end());
+    std::shuffle(seedNodes.begin(), seedNodes.end(), std::random_device{});
     for (const auto& seed : seedNodes) {
       auto conn = tryToConnectPeer(seed);
       if (conn != nullptr && fetchPeerList(std::move(conn))) {
@@ -268,7 +243,7 @@ void P2pNode::connectPeers() {
   }
 }
 
-void P2pNode::makeExpectedConnectionsCount(const PeerlistManager::Peerlist& peerlist, size_t connectionsCount) {
+void P2pNode::makeExpectedConnectionsCount(const Peerlist& peerlist, size_t connectionsCount) {
   while (getOutgoingConnectionsCount() < connectionsCount) {
     if (peerlist.count() == 0) {
       return;
@@ -280,7 +255,7 @@ void P2pNode::makeExpectedConnectionsCount(const PeerlistManager::Peerlist& peer
   }
 }
 
-bool P2pNode::makeNewConnectionFromPeerlist(const PeerlistManager::Peerlist& peerlist) {
+bool P2pNode::makeNewConnectionFromPeerlist(const Peerlist& peerlist) {
   size_t peerIndex;
   PeerIndexGenerator idxGen(std::min<uint64_t>(peerlist.count() - 1, m_cfg.getPeerListConnectRange()));
 
@@ -307,7 +282,7 @@ bool P2pNode::makeNewConnectionFromPeerlist(const PeerlistManager::Peerlist& pee
 
   return false;
 }
-  
+
 void P2pNode::preprocessIncomingConnection(ContextPtr ctx) {
   try {
     logger(DEBUGGING) << *ctx << "preprocessIncomingConnection";
@@ -403,8 +378,16 @@ bool P2pNode::fetchPeerList(ContextPtr connection) {
     }
 
     if (response.node_data.network_id != request.node_data.network_id) {
-      logger(ERROR) << *connection << "COMMAND_HANDSHAKE failed, wrong network: " << response.node_data.network_id;
+      logger(DEBUGGING) << *connection << "COMMAND_HANDSHAKE failed, wrong network: " << response.node_data.network_id;
       return false;
+    }
+
+    if (response.node_data.version < CryptoNote::P2P_MINIMUM_VERSION) {
+      logger(DEBUGGING) << *connection << "COMMAND_HANDSHAKE Failed, peer is wrong version: " << std::to_string(response.node_data.version);
+      return false;
+    } else if ((response.node_data.version - CryptoNote::P2P_CURRENT_VERSION) >= CryptoNote::P2P_UPGRADE_WINDOW) {
+      logger(WARNING) << *connection << "COMMAND_HANDSHAKE Warning, your software may be out of date. Please visit: "
+        << CryptoNote::LATEST_VERSION_URL << " for the latest version.";
     }
 
     return handleRemotePeerList(response.local_peerlist, response.node_data.local_time);
@@ -442,7 +425,7 @@ const CORE_SYNC_DATA& P2pNode::getGenesisPayload() const {
   return m_genesisPayload;
 }
 
-std::list<PeerlistEntry> P2pNode::getLocalPeerList() const {
+std::list<PeerlistEntry> P2pNode::getLocalPeerList() {
   std::list<PeerlistEntry> peerlist;
   m_peerlist.get_peerlist_head(peerlist);
   return peerlist;
@@ -451,7 +434,7 @@ std::list<PeerlistEntry> P2pNode::getLocalPeerList() const {
 basic_node_data P2pNode::getNodeData() const {
   basic_node_data nodeData;
   nodeData.network_id = m_cfg.getNetworkId();
-  nodeData.version = P2PProtocolVersion::CURRENT;
+  nodeData.version = CryptoNote::P2P_CURRENT_VERSION;
   nodeData.local_time = time(nullptr);
   nodeData.peer_id = m_myPeerId;
 
@@ -464,7 +447,7 @@ basic_node_data P2pNode::getNodeData() const {
   return nodeData;
 }
 
-PeerIdType P2pNode::getPeerId() const {
+uint64_t P2pNode::getPeerId() const {
   return m_myPeerId;
 }
 
@@ -537,6 +520,12 @@ void P2pNode::handleNodeData(const basic_node_data& node, P2pContext& context) {
   if (node.network_id != m_cfg.getNetworkId()) {
     std::ostringstream msg;
     msg << context << "COMMAND_HANDSHAKE Failed, wrong network!  (" << node.network_id << ")";
+    throw std::runtime_error(msg.str());
+  }
+
+  if (node.version < CryptoNote::P2P_MINIMUM_VERSION) {
+    std::ostringstream msg;
+    msg << context << "COMMAND_HANDSHAKE Failed, peer is wrong version! (" << std::to_string(node.version) << ")";
     throw std::runtime_error(msg.str());
   }
 
