@@ -29,6 +29,8 @@
 
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandlerCommon.h"
 
+#include "CryptoNoteConfig.h"
+
 #include "P2p/NetNode.h"
 
 #include "CoreRpcServerErrorCodes.h"
@@ -129,6 +131,7 @@ std::unordered_map<std::string, RpcServer::RpcHandler<RpcServer::HandlerFunction
   { "/stop_daemon", { jsonMethod<COMMAND_RPC_STOP_DAEMON>(&RpcServer::on_stop_daemon), true } },
   { "/peers", { jsonMethod<COMMAND_RPC_GET_PEER_LIST>(&RpcServer::on_get_peer_list), true } },
   { "/generatePaymentId", { jsonMethod<COMMAND_RPC_GENERATE_PAYMENT_ID>(&RpcServer::on_get_payment_id), true } },
+  { "/amount", { jsonMethod<COMMAND_RPC_GET_AMOUNT>(&RpcServer::on_get_amount), true } },
 
   // json rpc
   { "/json_rpc", { std::bind(&RpcServer::processJsonRpcRequest, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), true } }
@@ -444,6 +447,7 @@ bool RpcServer::on_get_info(const COMMAND_RPC_GET_INFO::request& req, COMMAND_RP
   res.tx_count = m_core.getBlockchainTransactionCount() - res.height; //without coinbase
   res.tx_pool_size = m_core.getPoolTransactionCount();
   res.alt_blocks_count = m_core.getAlternativeBlockCount();
+  res.coins_already_generated = m_core.getCurrency().formatAmount(m_core.getTotalGeneratedAmount());
   uint64_t total_conn = m_p2p.get_connections_count();
   res.outgoing_connections_count = m_p2p.get_outgoing_connections_count();
   res.incoming_connections_count = total_conn - res.outgoing_connections_count;
@@ -559,6 +563,13 @@ bool RpcServer::on_get_payment_id(const COMMAND_RPC_GENERATE_PAYMENT_ID::request
     throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: can't generate Payment ID" };
   }
   res.randomPaymentID = randomPID;
+  return true;
+}
+
+bool RpcServer::on_get_amount(const COMMAND_RPC_GET_AMOUNT::request& req, COMMAND_RPC_GET_AMOUNT::response& res) {
+  res.coins_already_generated = m_core.getCurrency().formatAmount(m_core.getTotalGeneratedAmount());
+  res.coins_left_to_generate = m_core.getCurrency().formatAmount(CryptoNote::parameters::MONEY_SUPPLY - m_core.getTotalGeneratedAmount());
+  res.coins_total_supply = m_core.getCurrency().formatAmount(CryptoNote::parameters::MONEY_SUPPLY);
   return true;
 }
 //------------------------------------------------------------------------------------------------------------------------------
