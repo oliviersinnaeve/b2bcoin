@@ -156,7 +156,12 @@ const std::initializer_list<CheckpointData> CHECKPOINTS = {
 , {256000, "93ba502fc37a17ca201e23495ce73d69243e1f80ba9a0db064ccfdda510c31ec"}
 , {288000, "a63d4eae1f0e66b97605d098711033b2e3f9c916b8a898b71b090f080d2f41f8"}
 , {315109, "6b3fbff5a5eccb3b32563cdbc1b9681ebac17a578388df056363d1a77a075c88"} // Make sure we are on correct chain after adding the fix to LWMA
-, {317000, "9c04abfdcaac0c87ff0d657750b167e2c1d85d3889df00fe6c8ce10c012627ab"} // Just for faster sync...
+, {320000, "a314ad7e09b1c3fe5fdbca1e9428022e67117ac2f84f399687ae9aa6121bd31f"}
+, {352000, "8dc4b1473661e9b471c9ebf1fbe3745ec6e66ed64536513bace2fedf4e43723f"}
+, {384000, "654af65c219ec58dce9da6d34d2adbfba3e8121d3d81be49937205d8b6c6f4ed"}
+, {416000, "6bae4c762df88415f9f2877f81bd1f0df6c33240ebd6f258b687dd81c8b99e60"}
+, {448000, "75e3ba5344bc41878923e29bfb6ea31f71c1108d265fb15c669ea9cfc020b0f7"}
+, {457000, "01afb94524e91c2521f556baaba963b4e74fee2592dce62204bb9bcc4ffb3914"} // Just for faster sync...
 };
 
 } // CryptoNote
