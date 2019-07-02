@@ -98,6 +98,8 @@ public:
 
   virtual CoreStatistics getCoreStatistics() const override;
 
+  virtual std::time_t getStartTime() const;
+
   //ICoreInformation
   virtual size_t getPoolTransactionCount() const override;
   virtual size_t getBlockchainTransactionCount() const override;
@@ -137,6 +139,8 @@ private:
   std::unique_ptr<IMainChainStorage> mainChainStorage;
   bool initialized;
 
+  time_t start_time;
+  
   size_t blockMedianSize;
 
   void throwIfNotInitialized() const;

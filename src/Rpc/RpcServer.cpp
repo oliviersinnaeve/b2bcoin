@@ -455,13 +455,19 @@ bool RpcServer::on_get_info(const COMMAND_RPC_GET_INFO::request& req, COMMAND_RP
   res.white_peerlist_size = m_p2p.getPeerlistManager().get_white_peers_count();
   res.grey_peerlist_size = m_p2p.getPeerlistManager().get_gray_peers_count();
   res.last_known_block_index = std::max(static_cast<uint32_t>(1), m_protocol.getObservedHeight()) - 1;
+  res.network_height = std::max(static_cast<uint32_t>(1), m_protocol.getBlockchainHeight());
+  res.hashrate = (uint32_t)round(res.difficulty / CryptoNote::parameters::DIFFICULTY_TARGET);
+  res.synced = ((uint64_t)res.height == (uint64_t)res.network_height);
+  res.testnet = m_core.getCurrency().isTestnet();
   res.version = PROJECT_VERSION;
   res.status = CORE_RPC_STATUS_OK;
+  res.start_time = (uint64_t)m_core.getStartTime();
   return true;
 }
 
 bool RpcServer::on_get_height(const COMMAND_RPC_GET_HEIGHT::request& req, COMMAND_RPC_GET_HEIGHT::response& res) {
   res.height = m_core.getTopBlockIndex() + 1;
+  res.network_height = std::max(static_cast<uint32_t>(1), m_protocol.getBlockchainHeight());
   res.status = CORE_RPC_STATUS_OK;
   return true;
 }
