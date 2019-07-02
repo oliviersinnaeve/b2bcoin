@@ -93,6 +93,7 @@ const char     MINER_CONFIG_FILE_NAME[]                           = "miner_conf.
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "b2bcoin";
+const char     COIN_SYMBOL[]                                 = "B2B";
 
 const uint8_t  TRANSACTION_VERSION_1                         = 1;
 const uint8_t  TRANSACTION_VERSION_2                         = 2;
