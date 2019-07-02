@@ -26,6 +26,7 @@
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandler.h"
 #include "Serialization/SerializationTools.h"
 #include "version.h"
+#include <boost/format.hpp>
 
 namespace {
 template <typename T>
@@ -68,6 +69,7 @@ DaemonCommandsHandler::DaemonCommandsHandler(CryptoNote::Core& core, CryptoNote:
   m_consoleHandler.setHandler("print_pool", boost::bind(&DaemonCommandsHandler::print_pool, this, _1), "Print transaction pool (long format)");
   m_consoleHandler.setHandler("print_pool_sh", boost::bind(&DaemonCommandsHandler::print_pool_sh, this, _1), "Print transaction pool (short format)");
   m_consoleHandler.setHandler("set_log", boost::bind(&DaemonCommandsHandler::set_log, this, _1), "set_log <level> - Change current log level, <level> is a number 0-4");
+  m_consoleHandler.setHandler("coin_info", boost::bind(&DaemonCommandsHandler::coin_info, this, _1), "Show B2B links and info");
   m_consoleHandler.setHandler("status", boost::bind(&DaemonCommandsHandler::status, this, _1), "Show daemon status");
 }
 
@@ -341,6 +343,47 @@ bool DaemonCommandsHandler::status(const std::vector<std::string>& args) {
     << "Transactions in mempool: " << tx_pool_size << std::endl
     << "Daemon uptime: " << (unsigned int)floor(uptime / 60.0 / 60.0 / 24.0) << "d " << (unsigned int)floor(fmod((uptime / 60.0 / 60.0), 24.0)) << "h "
     << (unsigned int)floor(fmod((uptime / 60.0), 60.0)) << "m " << (unsigned int)fmod(uptime, 60.0) << "s"
+    << std::endl;
+  
+  return true;
+}
+//--------------------------------------------------------------------------------
+bool DaemonCommandsHandler::coin_info(const std::vector<std::string>& args) {
+  uint64_t difficulty = m_core.getDifficultyForNextBlock();
+  uint64_t hashrate = (uint64_t) round(difficulty / CryptoNote::parameters::DIFFICULTY_TARGET);
+  uint32_t last_known_block_index = std::max(static_cast<uint32_t>(1), protocolQuery.getObservedHeight()) - 1;
+  std::string coins_already_generated = m_core.getCurrency().formatAmount(m_core.getTotalGeneratedAmount());
+  std::string coins_total_supply = m_core.getCurrency().formatAmount(CryptoNote::parameters::MONEY_SUPPLY);
+
+  std::cout << std::endl
+    << "========================= COIN INFO =========================" << std::endl
+    << "Coin name: B2Bcoin (B2B)" << std::endl
+    << "Total supply: " << coins_total_supply << std::endl
+    << "Already mined supply: " << coins_already_generated << std::endl
+    << "Current Network hashrate: " << get_mining_speed(hashrate) << std::endl
+    << "Current Blockchain height: " << last_known_block_index << std::endl
+    << std::endl
+    << "=========================== LINKS ===========================" << std::endl
+    << "Website: https://b2bcoin.xyz" << std::endl
+    << "Github: https://github.com/oliviersinnaeve/b2bcoin" << std::endl
+    << "Telegram chat: https://t.me/joinchat/Fxlb2Qw8ivAta7iYgM0Wiw" << std::endl
+    << "Discord chat: https://discordapp.com/invite/QwhhqPY" << std::endl
+    << std::endl
+    << "========================== WALLETS ==========================" << std::endl
+    << "GUI wallet: https://github.com/oliviersinnaeve/b2bcoin-qt-gui-wallet/releases" << std::endl
+    << "CLI wallet: https://github.com/oliviersinnaeve/b2bcoin/releases" << std::endl
+    << "Paper wallet: https://paperwallet.b2bcoin.xyz" << std::endl
+    << "Online wallet: https://wallet.b2bcoin.xyz" << std::endl
+    << "Telegram wallet: https://t.me/B2Bcoin_Wallet_bot" << std::endl
+    << std::endl
+    << "========================= EXCHANGES =========================" << std::endl
+    << "Official exchange: https://meroex.com" << std::endl
+    << std::endl
+    << "Unofficial exchanges: " << std::endl
+    << "STEX" << std::endl
+    << "FirstCryptoBank" << std::endl
+    << "TradeCX" << std::endl
+    << "(Use unofficial exchanges at your own risk!)" << std::endl
     << std::endl;
   
   return true;

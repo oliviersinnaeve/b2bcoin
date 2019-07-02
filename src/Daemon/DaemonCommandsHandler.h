@@ -76,5 +76,6 @@ private:
   bool print_pool_sh(const std::vector<std::string>& args);
   bool start_mining(const std::vector<std::string>& args);
   bool stop_mining(const std::vector<std::string>& args);
+  bool coin_info(const std::vector<std::string>& args);
   bool status(const std::vector<std::string>& args);
 };
