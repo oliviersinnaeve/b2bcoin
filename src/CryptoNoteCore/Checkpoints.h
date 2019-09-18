@@ -28,6 +28,7 @@ namespace CryptoNote
     Checkpoints(Logging::ILogger& log);
 
     bool addCheckpoint(uint32_t index, const std::string& hash_str);
+    bool loadCheckpointsFromFile(const std::string& fileName);
     bool isInCheckpointZone(uint32_t index) const;
     bool checkBlock(uint32_t index, const Crypto::Hash& h) const;
     bool checkBlock(uint32_t index, const Crypto::Hash& h, bool& isCheckpoint) const;
