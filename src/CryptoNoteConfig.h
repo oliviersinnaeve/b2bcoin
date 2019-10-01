@@ -27,6 +27,7 @@ namespace parameters {
 const uint32_t CRYPTONOTE_MAX_BLOCK_NUMBER                        = 500000000;
 const size_t   CRYPTONOTE_MAX_BLOCK_BLOB_SIZE                     = 500000000;
 const size_t   CRYPTONOTE_MAX_TX_SIZE                             = 1000000000;
+const size_t   CRYPTONOTE_MAX_SAFE_TX_SIZE                        = 115000;
 const uint64_t CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX            = 30;
 const uint32_t CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW               = 10;
 const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT                 = 60 * 6;
@@ -49,6 +50,8 @@ const uint64_t MINIMUM_FEE                                        = UINT64_C(100
 const uint64_t DEFAULT_DUST_THRESHOLD                             = UINT64_C(1000000);
 const uint64_t MAX_TRANSACTION_SIZE_LIMIT                         = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE * 110 / 100 - CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE;
 const uint64_t DEFAULT_FEE                                        = MINIMUM_FEE;
+const uint16_t DEFAULT_MIXIN                                      = 0;
+const uint16_t MINIMUM_MIXIN                                      = 0;
 const uint64_t DIFFICULTY_TARGET                                  = 120; // seconds
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY                  = 24 * 60 * 60 / DIFFICULTY_TARGET;
 const size_t   DIFFICULTY_WINDOW                                  = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY; // blocks

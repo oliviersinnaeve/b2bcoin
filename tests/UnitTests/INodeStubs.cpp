@@ -442,6 +442,13 @@ void INodeTrivialRefreshStub::doGetBlocks(const std::vector<uint32_t>& blockHeig
   callback(std::error_code());
 }
 
+void INodeTrivialRefreshStub::getBlock(const uint32_t blockHeight, BlockDetails &block, const Callback& callback) {
+  m_asyncCounter.addAsyncContext();
+
+  std::thread task([=, &block]() mutable { doGetBlock(blockHeight, block, callback); });
+  task.detach();
+}
+
 void INodeTrivialRefreshStub::getBlocks(const std::vector<Crypto::Hash>& blockHashes, std::vector<BlockDetails>& blocks, const Callback& callback) {
   m_asyncCounter.addAsyncContext();
 
