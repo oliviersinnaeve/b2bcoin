@@ -86,6 +86,7 @@ namespace CryptoNote
 
     //----------------------------------------------------------------------------------
     uint32_t get_current_blockchain_height();
+    float get_sync_percentage(uint64_t height, uint64_t target_height);
     bool request_missing_objects(CryptoNoteConnectionContext& context, bool check_having_blocks);
     bool on_connection_synchronized();
     void updateObservedHeight(uint32_t peerHeight, const CryptoNoteConnectionContext& context);
