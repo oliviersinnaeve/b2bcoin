@@ -109,7 +109,7 @@ void run(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node, Config &confi
     Action action;
 
     do {
-        std::cout << InformationMsg("B2Bcoin daemon v" + std::string(PROJECT_VERSION) + " B2BcoinWallet") << std::endl;
+        std::cout << InformationMsg("B2Bcoin daemon v" + std::string(PROJECT_VERSION) + " simplewallet2") << std::endl;
 
         /* Open/import/generate the wallet */
         action = getAction(config);

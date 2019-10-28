@@ -17,9 +17,9 @@ BEGIN
             VALUE "CompanyName", "B2beyond"
             VALUE "FileDescription", "B2Bcoin CLI Wallet"
             VALUE "FileVersion", PROJECT_VERSION
-            VALUE "InternalName", "B2BcoinWallet.exe"
+            VALUE "InternalName", "simplewallet2.exe"
             VALUE "LegalCopyright", "Copyright (C) 2018-2019, B2Bcoin Developers"
-            VALUE "OriginalFilename", "B2BcoinWallet.exe"
+            VALUE "OriginalFilename", "simplewallet2.exe"
             VALUE "ProductName", "B2Bcoin CLI Wallet"
             VALUE "ProductVersion", PROJECT_VERSION
         END
