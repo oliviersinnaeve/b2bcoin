@@ -234,20 +234,24 @@ bool Currency::constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size
 
 bool Currency::isFusionTransaction(const std::vector<uint64_t>& inputsAmounts, const std::vector<uint64_t>& outputsAmounts, size_t size) const {
   if (size > fusionTxMaxSize()) {
+    logger(ERROR) << "Fusion transaction verification failed: size exceeded max allowed size.";
     return false;
   }
 
   if (inputsAmounts.size() < fusionTxMinInputCount()) {
+    logger(ERROR) << "Fusion transaction verification failed: inputs count is less than minimum.";
     return false;
   }
 
   if (inputsAmounts.size() < outputsAmounts.size() * fusionTxMinInOutCountRatio()) {
+    logger(ERROR) << "Fusion transaction verification failed: inputs to outputs count ratio is less than minimum.";
     return false;
   }
 
   uint64_t inputAmount = 0;
   for (auto amount: inputsAmounts) {
     if (amount < defaultDustThreshold()) {
+      logger(ERROR) << "Fusion transaction verification failed: amount " << amount << " is less than dust threshold.";
       return false;
     }
 
