@@ -381,8 +381,8 @@ bool DaemonCommandsHandler::coin_info(const std::vector<std::string>& args) {
     << std::endl
     << "Unofficial exchanges: " << std::endl
     << "STEX" << std::endl
-    << "FirstCryptoBank" << std::endl
-    << "TradeCX" << std::endl
+    << "CryptoHubExchange" << std::endl
+    << "CICI Exchange" << std::endl
     << "(Use unofficial exchanges at your own risk!)" << std::endl
     << std::endl;
   
