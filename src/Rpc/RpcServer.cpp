@@ -29,6 +29,9 @@
 
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandlerCommon.h"
 
+#include "CryptoNoteConfig.h"
+#include "version.h"
+
 #include "P2p/NetNode.h"
 
 #include "CoreRpcServerErrorCodes.h"
@@ -116,6 +119,7 @@ std::unordered_map<std::string, RpcServer::RpcHandler<RpcServer::HandlerFunction
   { "/get_pool_changes.bin", { binMethod<COMMAND_RPC_GET_POOL_CHANGES>(&RpcServer::onGetPoolChanges), false } },
   { "/get_pool_changes_lite.bin", { binMethod<COMMAND_RPC_GET_POOL_CHANGES_LITE>(&RpcServer::onGetPoolChangesLite), false } },
   { "/get_blocks_details_by_hashes.bin", { binMethod<COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HASHES>(&RpcServer::onGetBlocksDetailsByHashes), false } },
+  { "/get_block_details_by_height.bin", { binMethod<COMMAND_RPC_GET_BLOCK_DETAILS_BY_HEIGHT>(&RpcServer::onGetBlockDetailsByHeight), false } },
   { "/get_blocks_hashes_by_timestamps.bin", { binMethod<COMMAND_RPC_GET_BLOCKS_HASHES_BY_TIMESTAMPS>(&RpcServer::onGetBlocksHashesByTimestamps), false } },
   { "/get_transaction_details_by_hashes.bin", { binMethod<COMMAND_RPC_GET_TRANSACTION_DETAILS_BY_HASHES>(&RpcServer::onGetTransactionDetailsByHashes), false } },
   { "/get_transaction_hashes_by_payment_id.bin", { binMethod<COMMAND_RPC_GET_TRANSACTION_HASHES_BY_PAYMENT_ID>(&RpcServer::onGetTransactionHashesByPaymentId), false } },
@@ -129,6 +133,7 @@ std::unordered_map<std::string, RpcServer::RpcHandler<RpcServer::HandlerFunction
   { "/stop_daemon", { jsonMethod<COMMAND_RPC_STOP_DAEMON>(&RpcServer::on_stop_daemon), true } },
   { "/peers", { jsonMethod<COMMAND_RPC_GET_PEER_LIST>(&RpcServer::on_get_peer_list), true } },
   { "/generatePaymentId", { jsonMethod<COMMAND_RPC_GENERATE_PAYMENT_ID>(&RpcServer::on_get_payment_id), true } },
+  { "/amount", { jsonMethod<COMMAND_RPC_GET_AMOUNT>(&RpcServer::on_get_amount), true } },
 
   // json rpc
   { "/json_rpc", { std::bind(&RpcServer::processJsonRpcRequest, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), true } }
@@ -381,6 +386,22 @@ bool RpcServer::onGetBlocksDetailsByHashes(const COMMAND_RPC_GET_BLOCKS_DETAILS_
   return true;
 }
 
+bool RpcServer::onGetBlockDetailsByHeight(const COMMAND_RPC_GET_BLOCK_DETAILS_BY_HEIGHT::request& req, COMMAND_RPC_GET_BLOCK_DETAILS_BY_HEIGHT::response& rsp) {
+  try {
+    BlockDetails blockDetails = m_core.getBlockDetails(req.blockHeight);
+    rsp.block = blockDetails;
+  } catch (std::system_error& e) {
+    rsp.status = e.what();
+    return false;
+  } catch (std::exception& e) {
+    rsp.status = "Error: " + std::string(e.what());
+    return false;
+  }
+
+  rsp.status = CORE_RPC_STATUS_OK;
+  return true;
+}
+
 bool RpcServer::onGetBlocksHashesByTimestamps(const COMMAND_RPC_GET_BLOCKS_HASHES_BY_TIMESTAMPS::request& req, COMMAND_RPC_GET_BLOCKS_HASHES_BY_TIMESTAMPS::response& rsp) {
   try {
     auto blockHashes = m_core.getBlockHashesByTimestamps(req.timestampBegin, req.secondsCount);
@@ -444,18 +465,26 @@ bool RpcServer::on_get_info(const COMMAND_RPC_GET_INFO::request& req, COMMAND_RP
   res.tx_count = m_core.getBlockchainTransactionCount() - res.height; //without coinbase
   res.tx_pool_size = m_core.getPoolTransactionCount();
   res.alt_blocks_count = m_core.getAlternativeBlockCount();
+  res.coins_already_generated = m_core.getCurrency().formatAmount(m_core.getTotalGeneratedAmount());
   uint64_t total_conn = m_p2p.get_connections_count();
   res.outgoing_connections_count = m_p2p.get_outgoing_connections_count();
   res.incoming_connections_count = total_conn - res.outgoing_connections_count;
   res.white_peerlist_size = m_p2p.getPeerlistManager().get_white_peers_count();
   res.grey_peerlist_size = m_p2p.getPeerlistManager().get_gray_peers_count();
   res.last_known_block_index = std::max(static_cast<uint32_t>(1), m_protocol.getObservedHeight()) - 1;
+  res.network_height = std::max(static_cast<uint32_t>(1), m_protocol.getBlockchainHeight());
+  res.hashrate = (uint32_t)round(res.difficulty / CryptoNote::parameters::DIFFICULTY_TARGET);
+  res.synced = ((uint64_t)res.height == (uint64_t)res.network_height);
+  res.testnet = m_core.getCurrency().isTestnet();
+  res.version = PROJECT_VERSION;
   res.status = CORE_RPC_STATUS_OK;
+  res.start_time = (uint64_t)m_core.getStartTime();
   return true;
 }
 
 bool RpcServer::on_get_height(const COMMAND_RPC_GET_HEIGHT::request& req, COMMAND_RPC_GET_HEIGHT::response& res) {
   res.height = m_core.getTopBlockIndex() + 1;
+  res.network_height = std::max(static_cast<uint32_t>(1), m_protocol.getBlockchainHeight());
   res.status = CORE_RPC_STATUS_OK;
   return true;
 }
@@ -559,6 +588,13 @@ bool RpcServer::on_get_payment_id(const COMMAND_RPC_GENERATE_PAYMENT_ID::request
     throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: can't generate Payment ID" };
   }
   res.randomPaymentID = randomPID;
+  return true;
+}
+
+bool RpcServer::on_get_amount(const COMMAND_RPC_GET_AMOUNT::request& req, COMMAND_RPC_GET_AMOUNT::response& res) {
+  res.coins_already_generated = m_core.getCurrency().formatAmount(m_core.getTotalGeneratedAmount());
+  res.coins_left_to_generate = m_core.getCurrency().formatAmount(CryptoNote::parameters::MONEY_SUPPLY - m_core.getTotalGeneratedAmount());
+  res.coins_total_supply = m_core.getCurrency().formatAmount(CryptoNote::parameters::MONEY_SUPPLY);
   return true;
 }
 //------------------------------------------------------------------------------------------------------------------------------

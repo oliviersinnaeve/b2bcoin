@@ -27,6 +27,7 @@ namespace parameters {
 const uint32_t CRYPTONOTE_MAX_BLOCK_NUMBER                        = 500000000;
 const size_t   CRYPTONOTE_MAX_BLOCK_BLOB_SIZE                     = 500000000;
 const size_t   CRYPTONOTE_MAX_TX_SIZE                             = 1000000000;
+const size_t   CRYPTONOTE_MAX_SAFE_TX_SIZE                        = 115000;
 const uint64_t CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX            = 30;
 const uint32_t CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW               = 10;
 const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT                 = 60 * 6;
@@ -49,6 +50,8 @@ const uint64_t MINIMUM_FEE                                        = UINT64_C(100
 const uint64_t DEFAULT_DUST_THRESHOLD                             = UINT64_C(1000000);
 const uint64_t MAX_TRANSACTION_SIZE_LIMIT                         = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE * 110 / 100 - CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE;
 const uint64_t DEFAULT_FEE                                        = MINIMUM_FEE;
+const uint16_t DEFAULT_MIXIN                                      = 0;
+const uint16_t MINIMUM_MIXIN                                      = 0;
 const uint64_t DIFFICULTY_TARGET                                  = 120; // seconds
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY                  = 24 * 60 * 60 / DIFFICULTY_TARGET;
 const size_t   DIFFICULTY_WINDOW                                  = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY; // blocks
@@ -93,6 +96,7 @@ const char     MINER_CONFIG_FILE_NAME[]                           = "miner_conf.
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "b2bcoin";
+const char     COIN_SYMBOL[]                                 = "B2B";
 
 const uint8_t  TRANSACTION_VERSION_1                         = 1;
 const uint8_t  TRANSACTION_VERSION_2                         = 2;
@@ -134,29 +138,14 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "";
 const char* const SEED_NODES[] = { 
   "144.217.87.79:39155", 
   "168.235.102.154:39155", 
-  "194.32.76.162:39155" 
-};
-
-struct CheckpointData {
-  uint32_t index;
-  const char* blockId;
-};
-
-const std::initializer_list<CheckpointData> CHECKPOINTS = { 
-  {32000, "e7ae994ab205bbd069445da11b5c64fc7d9ca42a51a0071f7011f6db44d77cea"}
-, {64000, "1d0a8aad28fd92d17d214e552c7465d19e08cd7fa1f723d8de7f559d4f347302"}
-, {94177, "197ee8147ea9f9a9af7a743602ace0fa852a2da36b766b2f2803714fc5ed1f25"}  // Make sure we are on correct chain after adding ZAWY (DA1)
-, {96000, "caa5246b052594a879f3f14389c087b61c0d551e2286d83a18c17705402f8765"}
-, {128000, "04741eeb627a18862bf78184a3f17ace4a68188b74b87d449505984615a8e1a5"}
-, {160000, "793ef67bddc5cb70dd46da1e7ee8854495070197b4f724a732bca6e612eb46e0"}
-, {192000, "41c3f63ac25cc804dcd3e05903df36928df4ea5a15cfc409e106b2cd9efd9710"}
-, {224000, "1bf3a0336d5b76158030596844a50ca2da8fdc4c8d2f1eaff76d3763c5ff066b"}
-, {235971, "83ac894283cb5dc6206a9248d947c6c71e17883fac32e57cd1a4558f994b871d"} // Make sure we are on correct chain after adding LWMA (DA2)
-, {243273, "1661d23c1baaf489805f68a8fd48736b31b87e8d2960225ff8d9bc1e2600753b"} // Make sure we are on correct chain after V4
-, {256000, "93ba502fc37a17ca201e23495ce73d69243e1f80ba9a0db064ccfdda510c31ec"}
-, {288000, "a63d4eae1f0e66b97605d098711033b2e3f9c916b8a898b71b090f080d2f41f8"}
-, {315109, "6b3fbff5a5eccb3b32563cdbc1b9681ebac17a578388df056363d1a77a075c88"} // Make sure we are on correct chain after adding the fix to LWMA
-, {317000, "9c04abfdcaac0c87ff0d657750b167e2c1d85d3889df00fe6c8ce10c012627ab"} // Just for faster sync...
+  "194.32.76.162:39155",
+  "173.249.35.250:39155",
+  "173.249.27.160:39155",
+  "173.249.41.103:39155",
+  "5.189.189.199:39155",
+  "80.241.210.21:39155",
+  "173.249.39.52:39155",
+  "213.136.89.252:39155"
 };
 
 } // CryptoNote

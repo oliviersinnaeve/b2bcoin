@@ -1,3 +1,19 @@
+Release notes 2.1.0
+- Added generate-container from the private spend and view keys in walletd
+- Added Json RPC command /amount to the daemon
+  (This return coins_already_generated, coins_left_to_generate and coins_total_supply)
+- Added version, daemon start time, network height and hashrate to the json RPC command /getinfo
+- Added new command in the daemon to show status of the network
+- Added sync percentage in the daemon
+- Added "New top block index detected" message to the daemon
+- Added B2Bcoin links and info in the daemon
+- Added option to load checkpoints from a csv file
+- Added more checkpoints
+- Added more seed-nodes
+- Added a new CLI wallet (simplewallet2)
+- Fixed issue when wallets show 0 or wrong balance after an import or reset
+- Small fixes
+
 Release notes 2.0.1
 - Added more checkpoints to avoid some alt blocks
 

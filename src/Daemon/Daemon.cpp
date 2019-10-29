@@ -29,6 +29,7 @@
 #include "Common/PathTools.h"
 #include "Common/Util.h"
 #include "crypto/hash.h"
+#include "CryptoNoteCheckpoints.h"
 #include "CryptoNoteCore/CryptoNoteTools.h"
 #include "CryptoNoteCore/Core.h"
 #include "CryptoNoteCore/Currency.h"
@@ -40,7 +41,6 @@
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandler.h"
 #include "P2p/NetNode.h"
 #include "P2p/NetNodeConfig.h"
-#include "Rpc/RpcServer.h"
 #include "Rpc/RpcServerConfig.h"
 #include "Serialization/BinaryInputStreamSerializer.h"
 #include "Serialization/BinaryOutputStreamSerializer.h"
@@ -70,6 +70,7 @@ namespace
   const command_line::arg_descriptor<std::vector<std::string>>        arg_enable_cors = { "enable-cors", "Adds header 'Access-Control-Allow-Origin' to the daemon's RPC responses. Uses the value as domain. Use * for all" };
   const command_line::arg_descriptor<bool>        arg_testnet_on  = {"testnet", "Used to deploy test nets. Checkpoints and hardcoded seeds are ignored, "
     "network id is changed. Use it with --data-dir flag. The wallet must be launched with --testnet flag.", false};
+  const command_line::arg_descriptor<std::string> arg_load_checkpoints   = {"checkpoints-file", "<filename> Use a checkpoints.csv file for faster initial blockchain sync", ""};
 }
 
 bool command_line_preprocessor(const boost::program_options::variables_map& vm, LoggerRef& logger);
@@ -121,6 +122,7 @@ int main(int argc, char* argv[])
     command_line::add_arg(desc_cmd_sett, arg_testnet_on);
     command_line::add_arg(desc_cmd_sett, arg_enable_cors);
     command_line::add_arg(desc_cmd_sett, arg_blockexplorer_on);
+    command_line::add_arg(desc_cmd_sett, arg_load_checkpoints);
 
     RpcServerConfig::initOptions(desc_cmd_sett);
     NetNodeConfig::initOptions(desc_cmd_sett);
@@ -203,10 +205,22 @@ int main(int argc, char* argv[])
     }
     CryptoNote::Currency currency = currencyBuilder.currency();
 
+    bool use_checkpoints_file = !command_line::get_arg(vm, arg_load_checkpoints).empty();
+
     CryptoNote::Checkpoints checkpoints(logManager);
-    if (!testnet_mode) {
-      for (const auto& cp : CryptoNote::CHECKPOINTS) {
-        checkpoints.addCheckpoint(cp.index, cp.blockId);
+    logger(INFO) << "Loading Checkpoints for faster initial sync...";
+    if (use_checkpoints_file && !testnet_mode) {
+      std::string checkpoints_file = command_line::get_arg(vm, arg_load_checkpoints);
+      bool results = checkpoints.loadCheckpointsFromFile(checkpoints_file);
+      if (!results) {
+        throw std::runtime_error("Failed to load checkpoints from file");
+      }
+    } else {
+      if(!testnet_mode) {
+        for (const auto& cp : CryptoNote::CHECKPOINTS) {
+          checkpoints.addCheckpoint(cp.index, cp.blockId);
+        }
+        logger(INFO) << "Loaded " << CryptoNote::CHECKPOINTS.size() << " default checkpoints";
       }
     }
     
@@ -263,7 +277,7 @@ int main(int argc, char* argv[])
     CryptoNote::RpcServer rpcServer(dispatcher, logManager, ccore, p2psrv, cprotocol);
 
     cprotocol.set_p2p_endpoint(&p2psrv);
-    DaemonCommandsHandler dch(ccore, p2psrv, logManager);
+    DaemonCommandsHandler dch(ccore, p2psrv, logManager, cprotocol, &rpcServer);
     logger(INFO) << "Initializing p2p server...";
     if (!p2psrv.init(netNodeConfig)) {
       logger(ERROR, BRIGHT_RED) << "Failed to initialize p2p server.";

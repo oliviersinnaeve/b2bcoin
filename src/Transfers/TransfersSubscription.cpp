@@ -57,8 +57,7 @@ const AccountKeys& TransfersSubscription::getKeys() const {
   return subscription.keys;
 }
 
-bool TransfersSubscription::addTransaction(const TransactionBlockInfo& blockInfo, const ITransactionReader& tx,
-                                           const std::vector<TransactionOutputInformationIn>& transfersList) {
+bool TransfersSubscription::addTransaction(const TransactionBlockInfo& blockInfo, const ITransactionReader& tx, const std::vector<TransactionOutputInformationIn>& transfersList) {
   bool added = transfers.addTransaction(blockInfo, tx, transfersList);
   if (added) {
     logger(TRACE) << "Transaction updates balance of wallet " << m_address << ", hash " << tx.getTransactionHash();
@@ -83,8 +82,7 @@ void TransfersSubscription::deleteUnconfirmedTransaction(const Hash& transaction
   }
 }
 
-void TransfersSubscription::markTransactionConfirmed(const TransactionBlockInfo& block, const Hash& transactionHash,
-                                                     const std::vector<uint32_t>& globalIndices) {
+void TransfersSubscription::markTransactionConfirmed(const TransactionBlockInfo& block, const Hash& transactionHash, const std::vector<uint32_t>& globalIndices) {
   transfers.markTransactionConfirmed(block, transactionHash, globalIndices);
   m_observerManager.notify(&ITransfersObserver::onTransactionUpdated, this, transactionHash);
 }

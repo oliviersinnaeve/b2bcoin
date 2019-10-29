@@ -190,12 +190,16 @@ const std::chrono::seconds OUTDATED_TRANSACTION_POLLING_INTERVAL = std::chrono::
 
 }
 
-Core::Core(const Currency& currency, Logging::ILogger& logger, Checkpoints&& checkpoints, System::Dispatcher& dispatcher,
-           std::unique_ptr<IBlockchainCacheFactory>&& blockchainCacheFactory, std::unique_ptr<IMainChainStorage>&& mainchainStorage)
-    : currency(currency), dispatcher(dispatcher), contextGroup(dispatcher), logger(logger, "Core"), checkpoints(std::move(checkpoints)),
-      upgradeManager(new UpgradeManager()), blockchainCacheFactory(std::move(blockchainCacheFactory)),
-      mainChainStorage(std::move(mainchainStorage)), initialized(false) {
-
+Core::Core(const Currency& currency, Logging::ILogger& logger, Checkpoints&& checkpoints, System::Dispatcher& dispatcher, std::unique_ptr<IBlockchainCacheFactory>&& blockchainCacheFactory, std::unique_ptr<IMainChainStorage>&& mainchainStorage) : 
+  currency(currency), 
+  dispatcher(dispatcher), 
+  contextGroup(dispatcher), 
+  logger(logger, "Core"), 
+  checkpoints(std::move(checkpoints)),
+  upgradeManager(new UpgradeManager()), 
+  blockchainCacheFactory(std::move(blockchainCacheFactory)),
+  mainChainStorage(std::move(mainchainStorage)), 
+  initialized(false) {
   upgradeManager->addMajorBlockVersion(BLOCK_MAJOR_VERSION_2, currency.upgradeHeight(BLOCK_MAJOR_VERSION_2));
   upgradeManager->addMajorBlockVersion(BLOCK_MAJOR_VERSION_3, currency.upgradeHeight(BLOCK_MAJOR_VERSION_3));
   upgradeManager->addMajorBlockVersion(BLOCK_MAJOR_VERSION_4, currency.upgradeHeight(BLOCK_MAJOR_VERSION_4));
@@ -1463,6 +1467,8 @@ void Core::save() {
 void Core::load() {
   initRootSegment();
 
+  start_time = std::time(nullptr);
+
   auto dbBlocksCount = chainsLeaves[0]->getTopBlockIndex() + 1;
   auto storageBlocksCount = mainChainStorage->getBlockCount();
 
@@ -1583,6 +1589,19 @@ IBlockchainCache* Core::findSegmentContainingBlock(const Crypto::Hash& blockHash
 
   // than search in alternative chains
   return findAlternativeSegmentContainingBlock(blockHash);
+}
+
+IBlockchainCache* Core::findSegmentContainingBlock(uint32_t blockHeight) const {
+  assert(chainsLeaves.size() > 0);
+
+  // first search in main chain
+  auto blockSegment = findMainChainSegmentContainingBlock(blockHeight);
+  if (blockSegment != nullptr) {
+    return blockSegment;
+  }
+
+  // than search in alternative chains
+  return findAlternativeSegmentContainingBlock(blockHeight);
 }
 
 IBlockchainCache* Core::findAlternativeSegmentContainingBlock(const Crypto::Hash& blockHash) const {
@@ -1926,6 +1945,17 @@ void Core::mergeSegments(IBlockchainCache* acceptingSegment, IBlockchainCache* s
   }
 }
 
+BlockDetails Core::getBlockDetails(const uint32_t blockHeight) const {
+  throwIfNotInitialized();
+
+  IBlockchainCache* segment = findSegmentContainingBlock(blockHeight);
+  if (segment == nullptr) {
+    throw std::runtime_error("Requested block height wasn't found in blockchain.");
+  }
+
+  return getBlockDetails(segment->getBlockHash(blockHeight));
+}
+
 BlockDetails Core::getBlockDetails(const Crypto::Hash& blockHash) const {
   throwIfNotInitialized();
 
@@ -2265,6 +2295,11 @@ void Core::updateBlockMedianSize() {
   auto lastBlockSizes = mainChain->getLastBlocksSizes(currency.rewardBlocksWindow());
 
   blockMedianSize = std::max(Common::medianValue(lastBlockSizes), static_cast<uint64_t>(nextBlockGrantedFullRewardZone));
+}
+
+std::time_t Core::getStartTime() const
+{
+  return start_time;
 }
 
 }

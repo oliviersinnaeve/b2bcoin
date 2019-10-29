@@ -134,6 +134,7 @@ CryptoNoteProtocolHandler::CryptoNoteProtocolHandler(const Currency& currency, S
   m_synchronized(false),
   m_stop(false),
   m_observedHeight(0),
+  m_blockchainHeight(0),
   m_peersCount(0),
   logger(log, "protocol") {
   
@@ -226,6 +227,15 @@ uint32_t CryptoNoteProtocolHandler::get_current_blockchain_height() {
   return m_core.getTopBlockIndex() + 1;
 }
 
+float CryptoNoteProtocolHandler::get_sync_percentage(uint64_t height, uint64_t target_height) {
+  target_height = target_height ? target_height < height ? height : target_height : height;
+  float pc = 100.0f * height / target_height;
+  if (height < target_height && pc > 99.9f){
+    return 99.9f; // to avoid 100% when not fully synced
+  }
+    return pc;
+}
+
 bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& hshd, CryptoNoteConnectionContext& context, bool is_inital) {
   if (context.m_state == CryptoNoteConnectionContext::state_befor_handshake && !is_inital)
     return true;
@@ -239,12 +249,17 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
       context.m_state = CryptoNoteConnectionContext::state_normal;
     }
   } else {
+    uint64_t currentHeight = get_current_blockchain_height();
+    uint64_t remoteHeight = hshd.current_height;
+
     int64_t diff = static_cast<int64_t>(hshd.current_height) - static_cast<int64_t>(get_current_blockchain_height());
 
-    logger(diff >= 0 ? (is_inital ? Logging::INFO : Logging::DEBUGGING) : Logging::TRACE, Logging::BRIGHT_YELLOW) << context <<
-      "Sync data returned unknown top block: " << get_current_blockchain_height() << " -> " << hshd.current_height
-      << " [" << std::abs(diff) << " blocks (" << std::abs(diff) / (24 * 60 * 60 / m_currency.difficultyTarget()) << " days) "
-      << (diff >= 0 ? std::string("behind") : std::string("ahead")) << "] " << std::endl << "SYNCHRONIZATION started";
+    logger(diff >= 0 ? (is_inital ? Logging::INFO : Logging::DEBUGGING) : Logging::TRACE, Logging::BRIGHT_YELLOW) << context;
+    logger(diff >= 0 ? (is_inital ? Logging::INFO : Logging::DEBUGGING) : Logging::TRACE, Logging::BRIGHT_GREEN) <<
+      "Synchronization " << get_sync_percentage(currentHeight, remoteHeight) << "% complete\t[" 
+      << get_current_blockchain_height() << " of " << hshd.current_height << " blocks]\t"
+      << "(" << std::abs(diff) / (24 * 60 * 60 / m_currency.difficultyTarget()) << " days "
+      << (diff >= 0 ? std::string("behind") : std::string("ahead")) << ")";
 
     logger(Logging::DEBUGGING) << "Remote top block height: " << hshd.current_height << ", id: " << hshd.top_id;
     //let the socket to send response to handshake, but request callback, to let send request data after response
@@ -708,6 +723,14 @@ void CryptoNoteProtocolHandler::updateObservedHeight(uint32_t peerHeight, const 
     }
   }
 
+  {
+    std::lock_guard<std::mutex> lock(m_blockchainHeightMutex);
+    if (peerHeight > m_blockchainHeight) {
+      m_blockchainHeight = peerHeight;
+      logger(Logging::INFO, Logging::BRIGHT_GREEN) << "New Top Block Detected: " << peerHeight;
+    }
+  }
+  
   if (updated) {
     logger(TRACE) << "Observed height updated: " << m_observedHeight;
     m_observerManager.notify(&ICryptoNoteProtocolObserver::lastKnownBlockHeightUpdated, m_observedHeight);
@@ -732,6 +755,11 @@ void CryptoNoteProtocolHandler::recalculateMaxObservedHeight(const CryptoNoteCon
 uint32_t CryptoNoteProtocolHandler::getObservedHeight() const {
   std::lock_guard<std::mutex> lock(m_observedHeightMutex);
   return m_observedHeight;
+};
+
+uint32_t CryptoNoteProtocolHandler::getBlockchainHeight() const {
+  std::lock_guard<std::mutex> lock(m_blockchainHeightMutex);
+  return m_blockchainHeight;
 };
 
 bool CryptoNoteProtocolHandler::addObserver(ICryptoNoteProtocolObserver* observer) {

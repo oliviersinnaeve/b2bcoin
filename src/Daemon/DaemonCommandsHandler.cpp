@@ -14,15 +14,19 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Copyright (c) 2019, The B2Bcoin developers
 
 #include "DaemonCommandsHandler.h"
 
+#include <ctime>
 #include "P2p/NetNode.h"
 #include "CryptoNoteCore/Miner.h"
 #include "CryptoNoteCore/Core.h"
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandler.h"
 #include "Serialization/SerializationTools.h"
 #include "version.h"
+#include <boost/format.hpp>
 
 namespace {
 template <typename T>
@@ -51,8 +55,8 @@ std::string printTransactionFullInfo(const CryptoNote::CachedTransaction& transa
 
 }
 
-DaemonCommandsHandler::DaemonCommandsHandler(CryptoNote::Core& core, CryptoNote::NodeServer& srv, Logging::LoggerManager& log) :
-  m_core(core), m_srv(srv), logger(log, "daemon"), m_logManager(log) {
+DaemonCommandsHandler::DaemonCommandsHandler(CryptoNote::Core& core, CryptoNote::NodeServer& srv, Logging::LoggerManager& log, const CryptoNote::ICryptoNoteProtocolQuery& protocol, CryptoNote::RpcServer* prpc_server) :
+  m_core(core), m_srv(srv), logger(log, "daemon"), m_logManager(log), protocolQuery(protocol), m_prpc_server(prpc_server) {
   m_consoleHandler.setHandler("exit", boost::bind(&DaemonCommandsHandler::exit, this, _1), "Shutdown the daemon");
   m_consoleHandler.setHandler("help", boost::bind(&DaemonCommandsHandler::help, this, _1), "Show this help");
   m_consoleHandler.setHandler("print_pl", boost::bind(&DaemonCommandsHandler::print_pl, this, _1), "Print peer list");
@@ -65,6 +69,8 @@ DaemonCommandsHandler::DaemonCommandsHandler(CryptoNote::Core& core, CryptoNote:
   m_consoleHandler.setHandler("print_pool", boost::bind(&DaemonCommandsHandler::print_pool, this, _1), "Print transaction pool (long format)");
   m_consoleHandler.setHandler("print_pool_sh", boost::bind(&DaemonCommandsHandler::print_pool_sh, this, _1), "Print transaction pool (short format)");
   m_consoleHandler.setHandler("set_log", boost::bind(&DaemonCommandsHandler::set_log, this, _1), "set_log <level> - Change current log level, <level> is a number 0-4");
+  m_consoleHandler.setHandler("coin_info", boost::bind(&DaemonCommandsHandler::coin_info, this, _1), "Show B2B links and info");
+  m_consoleHandler.setHandler("status", boost::bind(&DaemonCommandsHandler::status, this, _1), "Show daemon status");
 }
 
 //--------------------------------------------------------------------------------
@@ -286,5 +292,99 @@ bool DaemonCommandsHandler::print_pool_sh(const std::vector<std::string>& args)
 
   std::cout << std::endl;
 
+  return true;
+}
+//--------------------------------------------------------------------------------
+std::string DaemonCommandsHandler::get_mining_speed(uint64_t hr) {
+  if (hr > 1e12) return (boost::format("%.2f TH/s") % (hr / 1e12)).str();
+  if (hr > 1e9) return (boost::format("%.2f GH/s") % (hr / 1e9)).str();
+  if (hr > 1e6) return (boost::format("%.2f MH/s") % (hr / 1e6)).str();
+  if (hr > 1e3) return (boost::format("%.2f kH/s") % (hr / 1e3)).str();
+  return (boost::format("%.0f H/s") % hr).str();
+}
+float DaemonCommandsHandler::get_sync_percentage(uint64_t height, uint64_t target_height) {
+  target_height = target_height ? target_height < height ? height : target_height : height;
+  float pc = 100.0f * height / target_height;
+  if (height < target_height && pc > 99.9f){
+    return 99.9f; // to avoid 100% when not fully synced
+  }
+    return pc;
+}
+bool DaemonCommandsHandler::status(const std::vector<std::string>& args) {
+  uint64_t height = m_core.getTopBlockIndex();
+  uint64_t difficulty = m_core.getDifficultyForNextBlock();
+  size_t tx_pool_size = m_core.getPoolTransactionCount();
+  uint32_t last_known_block_index = std::max(static_cast<uint32_t>(1), protocolQuery.getObservedHeight()) - 1;
+  Crypto::Hash last_block_hash = m_core.getBlockHashByIndex(height);
+  std::string coins_already_generated = m_core.getCurrency().formatAmount(m_core.getTotalGeneratedAmount());
+  std::string coins_total_supply = m_core.getCurrency().formatAmount(CryptoNote::parameters::MONEY_SUPPLY);
+  size_t total_conn = m_srv.get_connections_count();
+  //size_t rpc_conn = m_prpc_server->get_connections_count();
+  size_t outgoing_connections_count = m_srv.get_outgoing_connections_count();
+  size_t incoming_connections_count = total_conn - outgoing_connections_count;
+  size_t white_peerlist_size = m_srv.getPeerlistManager().get_white_peers_count();
+  size_t grey_peerlist_size = m_srv.getPeerlistManager().get_gray_peers_count();
+  uint64_t hashrate = (uint64_t) round(difficulty / CryptoNote::parameters::DIFFICULTY_TARGET);
+  std::time_t uptime = std::time(nullptr) - m_core.getStartTime();
+  bool synced = ((uint32_t)height == (uint32_t)last_known_block_index);
+  uint64_t alt_block_count = m_core.getAlternativeBlockCount();
+
+  std::cout << std::endl
+    << (synced ? "Synced " : "Syncing ") << height << "/" << last_known_block_index 
+    << " (" << get_sync_percentage(height, last_known_block_index) << "%) "
+    << "on " << (m_core.getCurrency().isTestnet() ? "testnet " : "mainnet ") << std::endl
+    << "Network hashrate: " << get_mining_speed(hashrate) << std::endl
+    << "Generated coins: " << coins_already_generated << " of " << coins_total_supply << std::endl
+    << "Last block hash: " << Common::podToHex(last_block_hash) << std::endl
+    << "Next difficulty: " << difficulty << std::endl
+    << "Alt. blocks: " << alt_block_count << std::endl
+    << "Connections: Outgoing (" << outgoing_connections_count << ") / Incoming (" << incoming_connections_count << ") " << std::endl
+    << "Peers: White (" << white_peerlist_size << ") / Grey (" << grey_peerlist_size << ") " << std::endl
+    << "Transactions in mempool: " << tx_pool_size << std::endl
+    << "Daemon uptime: " << (unsigned int)floor(uptime / 60.0 / 60.0 / 24.0) << "d " << (unsigned int)floor(fmod((uptime / 60.0 / 60.0), 24.0)) << "h "
+    << (unsigned int)floor(fmod((uptime / 60.0), 60.0)) << "m " << (unsigned int)fmod(uptime, 60.0) << "s"
+    << std::endl;
+  
+  return true;
+}
+//--------------------------------------------------------------------------------
+bool DaemonCommandsHandler::coin_info(const std::vector<std::string>& args) {
+  uint64_t difficulty = m_core.getDifficultyForNextBlock();
+  uint64_t hashrate = (uint64_t) round(difficulty / CryptoNote::parameters::DIFFICULTY_TARGET);
+  uint32_t last_known_block_index = std::max(static_cast<uint32_t>(1), protocolQuery.getObservedHeight()) - 1;
+  std::string coins_already_generated = m_core.getCurrency().formatAmount(m_core.getTotalGeneratedAmount());
+  std::string coins_total_supply = m_core.getCurrency().formatAmount(CryptoNote::parameters::MONEY_SUPPLY);
+
+  std::cout << std::endl
+    << "========================= COIN INFO =========================" << std::endl
+    << "Coin name: B2Bcoin (B2B)" << std::endl
+    << "Total supply: " << coins_total_supply << std::endl
+    << "Already mined supply: " << coins_already_generated << std::endl
+    << "Current Network hashrate: " << get_mining_speed(hashrate) << std::endl
+    << "Current Blockchain height: " << last_known_block_index << std::endl
+    << std::endl
+    << "=========================== LINKS ===========================" << std::endl
+    << "Website: https://b2bcoin.xyz" << std::endl
+    << "Github: https://github.com/oliviersinnaeve/b2bcoin" << std::endl
+    << "Telegram chat: https://t.me/joinchat/Fxlb2Qw8ivAta7iYgM0Wiw" << std::endl
+    << "Discord chat: https://discordapp.com/invite/QwhhqPY" << std::endl
+    << std::endl
+    << "========================== WALLETS ==========================" << std::endl
+    << "GUI wallet: https://github.com/oliviersinnaeve/b2bcoin-qt-gui-wallet/releases" << std::endl
+    << "CLI wallet: https://github.com/oliviersinnaeve/b2bcoin/releases" << std::endl
+    << "Paper wallet: https://paperwallet.b2bcoin.xyz" << std::endl
+    << "Online wallet: https://wallet.b2bcoin.xyz" << std::endl
+    << "Telegram wallet: https://t.me/B2Bcoin_Wallet_bot" << std::endl
+    << std::endl
+    << "========================= EXCHANGES =========================" << std::endl
+    << "Official exchange: https://meroex.com" << std::endl
+    << std::endl
+    << "Unofficial exchanges: " << std::endl
+    << "STEX" << std::endl
+    << "CryptoHubExchange" << std::endl
+    << "CICI Exchange" << std::endl
+    << "(Use unofficial exchanges at your own risk!)" << std::endl
+    << std::endl;
+  
   return true;
 }

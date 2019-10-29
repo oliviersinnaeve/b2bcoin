@@ -106,12 +106,12 @@ inline std::string interpret_rpc_response(bool ok, const std::string& status) {
   std::string err;
   if (ok) {
     if (status == CORE_RPC_STATUS_BUSY) {
-      err = "the B2B daemon is busy. Please try later";
+      err = std::string("the ") + COIN_SYMBOL + " daemon is busy. Please try later";
     } else if (status != CORE_RPC_STATUS_OK) {
       err = status;
     }
   } else {
-    err = "possible lost connection to the B2B daemon";
+    err = std::string("possible lost connection to the ") + COIN_SYMBOL + " daemon";
   }
   return err;
 }
@@ -201,7 +201,7 @@ struct TransferCommand {
             if (CryptoNote::parsePaymentId(arg, paymentId)) {
               logger(ERROR, BRIGHT_RED) << "Invalid payment ID usage. Please, use -p <payment_id>. See help for details.";
             } else {
-              logger(ERROR, BRIGHT_RED) << "Wrong B2B address: " << arg;
+              logger(ERROR, BRIGHT_RED) << "Wrong " << COIN_SYMBOL << " address: " << arg;
             }
 
             return false;
@@ -222,7 +222,7 @@ struct TransferCommand {
       }
 
       if (dsts.empty()) {
-        logger(ERROR, BRIGHT_RED) << "At least one destination B2B address is required";
+        logger(ERROR, BRIGHT_RED) << "At least one destination " << COIN_SYMBOL << " address is required";
         return false;
       }
     } catch (const std::exception& e) {
@@ -282,11 +282,11 @@ std::string tryToOpenWalletOrLoadKeysOrThrow(LoggerRef& logger, std::unique_ptr<
   }
 
   if (walletExists) {
-    logger(INFO) << "Loading the B2B wallet...";
+    logger(INFO) << "Loading the " << COIN_SYMBOL << " wallet...";
     std::ifstream walletFile;
     walletFile.open(walletFileName, std::ios_base::binary | std::ios_base::in);
     if (walletFile.fail()) {
-      throw std::runtime_error("Error opening the B2B wallet file '" + walletFileName + "'");
+      throw std::runtime_error(std::string("Error opening the ") + COIN_SYMBOL + " wallet file '" + walletFileName + "'");
     }
 
     auto initError = initAndLoadWallet(*wallet, walletFile, password);
@@ -301,22 +301,22 @@ std::string tryToOpenWalletOrLoadKeysOrThrow(LoggerRef& logger, std::unique_ptr<
 
         initError = initAndLoadWallet(*wallet, ss, password);
         if (initError) {
-          throw std::runtime_error("Failed to load the B2B wallet: " + initError.message());
+          throw std::runtime_error(std::string("Failed to load the ") + COIN_SYMBOL + " wallet: " + initError.message());
         }
 
-        logger(INFO) << "Storing the B2B wallet...";
+        logger(INFO) << "Storing the " << COIN_SYMBOL << " wallet...";
 
         try {
           CryptoNote::WalletHelper::storeWallet(*wallet, walletFileName);
         } catch (std::exception& e) {
-          logger(ERROR, BRIGHT_RED) << "Failed to store the B2B wallet: " << e.what();
-          throw std::runtime_error("Error saving the B2B wallet file '" + walletFileName + "'");
+          logger(ERROR, BRIGHT_RED) << "Failed to store the " << COIN_SYMBOL << " wallet: " << e.what();
+          throw std::runtime_error(std::string("Error saving the ") + COIN_SYMBOL + " wallet file '" + walletFileName + "'");
         }
 
         logger(INFO, BRIGHT_GREEN) << "Stored ok";
         return walletFileName;
       } else { // no keys, wallet error loading
-        throw std::runtime_error("can't load the B2B wallet file '" + walletFileName + "', check the password");
+        throw std::runtime_error(std::string("can't load the ") + COIN_SYMBOL + " wallet file '" + walletFileName + "', check the password");
       }
     } else { //new wallet ok 
       return walletFileName;
@@ -335,22 +335,22 @@ std::string tryToOpenWalletOrLoadKeysOrThrow(LoggerRef& logger, std::unique_ptr<
 
     removeGuard.removeObserver();
     if (initError) {
-      throw std::runtime_error("Failed to load the B2B wallet: " + initError.message());
+      throw std::runtime_error(std::string("Failed to load the ") + COIN_SYMBOL + " wallet: " + initError.message());
     }
 
-    logger(INFO) << "Storing the B2B wallet...";
+    logger(INFO) << "Storing the " << COIN_SYMBOL << " wallet...";
 
     try {
       CryptoNote::WalletHelper::storeWallet(*wallet, walletFileName);
     } catch(std::exception& e) {
-      logger(ERROR, BRIGHT_RED) << "Failed to store the B2B wallet: " << e.what();
-      throw std::runtime_error("Error saving the B2B wallet file '" + walletFileName + "'");
+      logger(ERROR, BRIGHT_RED) << "Failed to store the " << COIN_SYMBOL << " wallet: " << e.what();
+      throw std::runtime_error(std::string("Error saving the ") + COIN_SYMBOL + " wallet file '" + walletFileName + "'");
     }
 
     logger(INFO, BRIGHT_GREEN) << "Stored ok";
     return walletFileName;
   } else { //no wallet no keys
-    throw std::runtime_error("The B2B wallet file '" + walletFileName + "' is not found");
+    throw std::runtime_error(std::string("The ") + COIN_SYMBOL + " wallet file '" + walletFileName + "' is not found");
   }
 }
 
@@ -470,27 +470,27 @@ simple_wallet::simple_wallet(System::Dispatcher& dispatcher, const CryptoNote::C
   //m_consoleHandler.setHandler("start_mining", boost::bind(&simple_wallet::start_mining, this, _1), "start_mining [<number_of_threads>] - Start mining in daemon");
   //m_consoleHandler.setHandler("stop_mining", boost::bind(&simple_wallet::stop_mining, this, _1), "Stop mining in daemon");
   //m_consoleHandler.setHandler("refresh", boost::bind(&simple_wallet::refresh, this, _1), "Resynchronize transactions and balance");
-  m_consoleHandler.setHandler("export_keys", boost::bind(&simple_wallet::export_keys, this, _1), "Show all the secret keys of the openned B2B wallet");
+  m_consoleHandler.setHandler("export_keys", boost::bind(&simple_wallet::export_keys, this, _1), std::string("Show all the secret keys of the openned ") + COIN_SYMBOL + " wallet");
   m_consoleHandler.setHandler("export_cli_key", boost::bind(&simple_wallet::export_cli_key, this, _1), "Show the secret keys for the CLI wallet");
   m_consoleHandler.setHandler("export_gui_key", boost::bind(&simple_wallet::export_gui_key, this, _1), "Show the secret key for the GUI wallet");
   m_consoleHandler.setHandler("export_tracking_key", boost::bind(&simple_wallet::export_tracking_key, this, _1), "Show the public key for the GUI wallet, you can share this with anyone and they can see you balance but not spend it.");
-  m_consoleHandler.setHandler("balance", boost::bind(&simple_wallet::show_balance, this, _1), "Show the current B2B wallet balance");
+  m_consoleHandler.setHandler("balance", boost::bind(&simple_wallet::show_balance, this, _1), std::string("Show the current ") + COIN_SYMBOL + " wallet balance");
   m_consoleHandler.setHandler("list_incoming_transfers", boost::bind(&simple_wallet::show_incoming_transfers, this, _1), "Show all incoming transfers");
   m_consoleHandler.setHandler("list_outgoing_transfers", boost::bind(&simple_wallet::show_outgoing_transfers, this, _1), "Show all outgoing transfers");
   m_consoleHandler.setHandler("list_all_transfers", boost::bind(&simple_wallet::listTransfers, this, _1), "Show all known transfers to and from the wallet");
   m_consoleHandler.setHandler("payments", boost::bind(&simple_wallet::show_payments, this, _1), "payments <payment_id_1> [<payment_id_2> ... <payment_id_N>] - Show payments <payment_id_1>, ... <payment_id_N>");
   m_consoleHandler.setHandler("generate_payment_id", boost::bind(&simple_wallet::generate_payment_id, this, _1), "Generate a random Payment ID");
-  m_consoleHandler.setHandler("bc_height", boost::bind(&simple_wallet::show_blockchain_height, this, _1), "Show the B2B blockchain height");
+  m_consoleHandler.setHandler("bc_height", boost::bind(&simple_wallet::show_blockchain_height, this, _1), std::string("Show the ") + COIN_SYMBOL + " blockchain height");
   m_consoleHandler.setHandler("transfer", boost::bind(&simple_wallet::transfer, this, _1),
     "transfer <mixin_count> <addr_1> <amount_1> [<addr_2> <amount_2> ... <addr_N> <amount_N>] [-p payment_id] [-f fee]"
     " - Transfer <amount_1>,... <amount_N> to <address_1>,... <address_N>, respectively. "
     "<mixin_count> is the number of transactions yours is indistinguishable from (from 0 to maximum available)");
   m_consoleHandler.setHandler("set_log", boost::bind(&simple_wallet::set_log, this, _1), "set_log <level> - Change current log level, <level> is a number 0-4");
-  m_consoleHandler.setHandler("address", boost::bind(&simple_wallet::print_address, this, _1), "Show the current B2B wallet public address");
-  m_consoleHandler.setHandler("save", boost::bind(&simple_wallet::save, this, _1), "Save the B2B wallet synchronized data");
+  m_consoleHandler.setHandler("address", boost::bind(&simple_wallet::print_address, this, _1), std::string("Show the current ") + COIN_SYMBOL + " wallet public address");
+  m_consoleHandler.setHandler("save", boost::bind(&simple_wallet::save, this, _1), std::string("Save the ") + COIN_SYMBOL + " wallet synchronized data");
   m_consoleHandler.setHandler("reset", boost::bind(&simple_wallet::reset, this, _1), "Discard cache data and start synchronizing from the start");
   m_consoleHandler.setHandler("help", boost::bind(&simple_wallet::help, this, _1), "Show this help");
-  m_consoleHandler.setHandler("exit", boost::bind(&simple_wallet::exit, this, _1), "Close the B2B wallet");
+  m_consoleHandler.setHandler("exit", boost::bind(&simple_wallet::exit, this, _1), std::string("Close the ") + COIN_SYMBOL + " wallet");
 }
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::set_log(const std::vector<std::string> &args) {
@@ -518,7 +518,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
   handle_command_line(vm);
 
   if (!m_daemon_address.empty() && (!m_daemon_host.empty() || 0 != m_daemon_port)) {
-    fail_msg_writer() << "you can't specify a B2B daemon host or port several times";
+    fail_msg_writer() << "you can't specify a " << COIN_SYMBOL << " daemon host or port several times";
     return false;
   }
 
@@ -526,7 +526,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     std::cout << "          .-----------------     | B2Bcoin CLI wallet                                |\n"
 			 "          ```````````````..---   | ------------------------------------------------- |\n"
 			 "                           `--.  | Homepage:                     https://b2bcoin.xyz |\n"
-			 "                           `--.  | Mining pool:               http://pool.b2bcoin.ml |\n"
+			 "                           `--.  | Mining pool:             https://pool.b2bcoin.xyz |\n"
 			 "                         ``---`  | ------------------------------------------------- |\n"
 			 "      `---------------------.    |                                                   |\n"
 			 "      `````````````````````      | https://bitcointalk.org/index.php?topic=2098163.0 |\n"
@@ -537,14 +537,14 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
 			 "  `---  /oo-                 +oo | https://forum.b2bcoin.xyz/index.php               |\n"
 			 "  ---` -oo/  --------------  +oo | https://github.com/oliviersinnaeve                |\n"
 			 " .--. .ooo` ``````````````  /oo: |                                                   |\n"
-			 "`---  +oo+::::::::::::::::+ooo:  | Exchanges: STEX, FirstCryptoBank                  |\n"
-			 "---` :ooooooooooooooooooooo+:`   | Coming soon: Meroex.com !!!                       |\n"
+			 "`---  +oo+::::::::::::::::+ooo:  | Exchanges: Meroex.com (By B2Bcoin)                |\n"
+			 "---` :ooooooooooooooooooooo+:`   |            STEX, CryptoHubExchange, CICI Exchange |\n"
 			 " ____ _________________________________     ____ ____________________________________ \n"
-			 "||G |||Generate a new B2B wallet file ||   ||I |||Create a new B2B wallet file from ||\n"
+			 "||G |||Generate a new " << COIN_SYMBOL << " wallet file ||   ||I |||Create a new " << COIN_SYMBOL << " wallet file from ||\n"
 			 "||__|||_______________________________||   ||__|||the Secret Spend and View keys    ||\n"
 			 "|/__\\|/_______________________________\\|   |/__\\||__________________________________||\n"
 			 " ____ _________________________                 |/__________________________________\\|\n"
-			 "||O |||Open a B2B wallet file || \n"
+			 "||O |||Open a " << COIN_SYMBOL << " wallet file || \n"
 			 "||__|||_______________________|| \n"
 			 "|/__\\|/_______________________\\| \n"
 			 " ____ _______  \n"
@@ -568,10 +568,10 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
       return false;
     }
 
-    std::cout << "Specify a B2B wallet file name (e.g., myB2Bwallet.wallet).\n";
+    std::cout << "Specify a " << COIN_SYMBOL << " wallet file name (e.g., my" << COIN_SYMBOL << "wallet.wallet).\n";
     std::string userInput;
     do {
-      std::cout << "B2B wallet file name: ";
+      std::cout << COIN_SYMBOL << " wallet file name: ";
       std::getline(std::cin, userInput);
       boost::algorithm::trim(userInput);
     } while (userInput.empty());
@@ -613,7 +613,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
   
   if (!m_daemon_address.empty()) {
     if (!parseUrlAddress(m_daemon_address, m_daemon_host, m_daemon_port)) {
-      fail_msg_writer() << "Failed to parse the B2B daemon address: " << m_daemon_address;
+      fail_msg_writer() << "Failed to parse the " << COIN_SYMBOL << " daemon address: " << m_daemon_address;
       return false;
     }
   } else {
@@ -624,7 +624,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
   if (command_line::has_arg(vm, arg_password)) {
     pwd_container.password(command_line::get_arg(vm, arg_password));
   } else if (!pwd_container.read_password(!m_generate_new.empty() || !m_import_new.empty())) {
-    fail_msg_writer() << "Failed to read the B2B wallet password";
+    fail_msg_writer() << "Failed to read the " << COIN_SYMBOL << " wallet password";
     return false;
   }
 
@@ -656,7 +656,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     }
 
     if (!writeAddressFile(walletAddressFile, m_wallet->getAddress())) {
-      logger(WARNING, BRIGHT_RED) << "Couldn't write the B2B wallet address file: " + walletAddressFile;
+      logger(WARNING, BRIGHT_RED) << "Couldn't write the " << COIN_SYMBOL << " wallet address file: " + walletAddressFile;
     }
   } else if (!m_import_new.empty()) {
     std::string walletAddressFile = prepareWalletAddressFilename(m_import_new);
@@ -697,7 +697,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     }
 
     if (!writeAddressFile(walletAddressFile, m_wallet->getAddress())) {
-      logger(WARNING, BRIGHT_RED) << "Couldn't write the B2B wallet address file: " + walletAddressFile;
+      logger(WARNING, BRIGHT_RED) << "Couldn't write the " << COIN_SYMBOL << " wallet address file: " + walletAddressFile;
     }
   } else {
     m_wallet.reset(new WalletLegacy(m_currency, *m_node));
@@ -705,7 +705,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     try {
       m_wallet_file = tryToOpenWalletOrLoadKeysOrThrow(logger, m_wallet, m_wallet_file_arg, pwd_container.password());
     } catch (const std::exception& e) {
-      fail_msg_writer() << "Failed to load the B2B wallet: " << e.what();
+      fail_msg_writer() << "Failed to load the " << COIN_SYMBOL << " wallet: " << e.what();
       return false;
     }
 
@@ -759,14 +759,14 @@ bool simple_wallet::new_wallet(const std::string &wallet_file, const std::string
     auto initError = f_initError.get();
     m_initResultPromise.reset(nullptr);
     if (initError) {
-      fail_msg_writer() << "Failed to generate a new B2B wallet: " << initError.message();
+      fail_msg_writer() << "Failed to generate a new " << COIN_SYMBOL << " wallet: " << initError.message();
       return false;
     }
 
     try {
       CryptoNote::WalletHelper::storeWallet(*m_wallet, m_wallet_file);
     } catch (std::exception& e) {
-      fail_msg_writer() << "Failed to save the new B2B wallet: " << e.what();
+      fail_msg_writer() << "Failed to save the new " << COIN_SYMBOL << " wallet: " << e.what();
       throw;
     }
 
@@ -774,11 +774,11 @@ bool simple_wallet::new_wallet(const std::string &wallet_file, const std::string
     m_wallet->getAccountKeys(keys);
 
     logger(INFO, BRIGHT_GREEN) <<
-      "\n\nGenerated a new B2B wallet: \n" << m_wallet->getAddress() << "\n\n" <<
+      "\n\nGenerated a new " << COIN_SYMBOL << " wallet: \n" << m_wallet->getAddress() << "\n\n" <<
       "Secret view key: \n" << Common::podToHex(keys.viewSecretKey) << "\n\n\n";
   }
   catch (const std::exception& e) {
-    fail_msg_writer() << "Failed to generate a new B2B wallet: " << e.what();
+    fail_msg_writer() << "Failed to generate a new " << COIN_SYMBOL << " wallet: " << e.what();
     return false;
   }
 
@@ -815,14 +815,14 @@ bool simple_wallet::new_wallet(Crypto::SecretKey &secret_key, Crypto::SecretKey 
     auto initError = f_initError.get();
     m_initResultPromise.reset(nullptr);
     if (initError) {
-      fail_msg_writer() << "Failed to generate a new B2B wallet: " << initError.message();
+      fail_msg_writer() << "Failed to generate a new " << COIN_SYMBOL << " wallet: " << initError.message();
       return false;
     }
 
     try {
       CryptoNote::WalletHelper::storeWallet(*m_wallet, m_wallet_file);
     } catch (std::exception& e) {
-      fail_msg_writer() << "Failed to save the new B2B wallet: " << e.what();
+      fail_msg_writer() << "Failed to save the new " << COIN_SYMBOL << " wallet: " << e.what();
       throw;
     }
 
@@ -830,10 +830,10 @@ bool simple_wallet::new_wallet(Crypto::SecretKey &secret_key, Crypto::SecretKey 
     m_wallet->getAccountKeys(keys);
 
     logger(INFO, BRIGHT_GREEN) <<
-      "\n\nImported the B2B wallet: \n" << m_wallet->getAddress() << std::endl;
+      "\n\nImported the " << COIN_SYMBOL << " wallet: \n" << m_wallet->getAddress() << std::endl;
   }
   catch (const std::exception& e) {
-    fail_msg_writer() << "Failed to import the B2B wallet: " << e.what();
+    fail_msg_writer() << "Failed to import the " << COIN_SYMBOL << " wallet: " << e.what();
     return false;
   }
 
@@ -930,7 +930,7 @@ bool simple_wallet::start_mining(const std::vector<std::string>& args) {
 
     std::string err = interpret_rpc_response(true, res.status);
     if (err.empty())
-      success_msg_writer() << "Mining started in the B2B daemon";
+      success_msg_writer() << "Mining started in the " << COIN_SYMBOL << " daemon";
     else
       fail_msg_writer() << "mining has NOT been started: " << err;
 
@@ -954,7 +954,7 @@ bool simple_wallet::stop_mining(const std::vector<std::string>& args)
     invokeJsonCommand(httpClient, "/stop_mining", req, res);
     std::string err = interpret_rpc_response(true, res.status);
     if (err.empty())
-      success_msg_writer() << "Mining stopped in the B2B daemon";
+      success_msg_writer() << "Mining stopped in the " << COIN_SYMBOL << " daemon";
     else
       fail_msg_writer() << "mining has NOT been stopped: " << err;
   } catch (const ConnectException&) {
@@ -974,7 +974,7 @@ void simple_wallet::initCompleted(std::error_code result) {
 //----------------------------------------------------------------------------------------------------
 void simple_wallet::connectionStatusUpdated(bool connected) {
   if (connected) {
-    logger(INFO, GREEN) << "Wallet connected to the B2B daemon.";
+    logger(INFO, GREEN) << "Wallet connected to the " << COIN_SYMBOL << " daemon.";
   } else {
     printConnectionError();
   }
@@ -994,11 +994,11 @@ void simple_wallet::externalTransactionCreated(CryptoNote::TransactionId transac
   if (txInfo.totalAmount >= 0) {
     logger(INFO, GREEN) <<
       logPrefix.str() << " transaction " << Common::podToHex(txInfo.hash) <<
-      ", received " << m_currency.formatAmount(txInfo.totalAmount) << " B2B";
+      ", received " << m_currency.formatAmount(txInfo.totalAmount) << " " << COIN_SYMBOL;
   } else {
     logger(INFO, MAGENTA) <<
       logPrefix.str() << " transaction " << Common::podToHex(txInfo.hash) <<
-      ", spent " << m_currency.formatAmount(static_cast<uint64_t>(-txInfo.totalAmount)) << " B2B";
+      ", spent " << m_currency.formatAmount(static_cast<uint64_t>(-txInfo.totalAmount)) << " " << COIN_SYMBOL;
   }
 
   if (txInfo.blockHeight == WALLET_LEGACY_UNCONFIRMED_TRANSACTION_HEIGHT) {
@@ -1081,8 +1081,8 @@ bool simple_wallet::export_tracking_key(const std::vector<std::string>& args/* =
 }
 
 bool simple_wallet::show_balance(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
-  success_msg_writer() << "\n\nAvailable balance: " << m_currency.formatAmount(m_wallet->actualBalance()) << " B2B\n" <<
-    "Locked amount: " << m_currency.formatAmount(m_wallet->pendingBalance()) << " B2B\n";
+  success_msg_writer() << "\n\nAvailable balance: " << m_currency.formatAmount(m_wallet->actualBalance()) << " " << COIN_SYMBOL << "\n" <<
+    "Locked amount: " << m_currency.formatAmount(m_wallet->pendingBalance()) << " " << COIN_SYMBOL << "\n";
 
   return true;
 }
@@ -1207,7 +1207,7 @@ bool simple_wallet::show_blockchain_height(const std::vector<std::string>& args)
     uint64_t bc_height = m_node->getLastLocalBlockHeight();
     success_msg_writer() << bc_height;
   } catch (std::exception &e) {
-    fail_msg_writer() << "Failed to get B2B blockchain height: " << e.what();
+    fail_msg_writer() << "Failed to get " << COIN_SYMBOL << " blockchain height: " << e.what();
   }
 
   return true;
@@ -1228,7 +1228,7 @@ bool simple_wallet::transfer(const std::vector<std::string> &args) {
 
     CryptoNote::TransactionId tx = m_wallet->sendTransaction(cmd.dsts, cmd.fee, extraString, cmd.fake_outs_count, 0);
     if (tx == WALLET_LEGACY_INVALID_TRANSACTION_ID) {
-      fail_msg_writer() << "Can't send B2B";
+      fail_msg_writer() << "Can't send " << COIN_SYMBOL;
       return true;
     }
 
@@ -1242,7 +1242,7 @@ bool simple_wallet::transfer(const std::vector<std::string> &args) {
 
     CryptoNote::WalletLegacyTransaction txInfo;
     m_wallet->getTransaction(tx, txInfo);
-    success_msg_writer(true) << "B2B successfully sent, transaction " << Common::podToHex(txInfo.hash);
+    success_msg_writer(true) << COIN_SYMBOL << " successfully sent, transaction " << Common::podToHex(txInfo.hash);
 
     try {
       CryptoNote::WalletHelper::storeWallet(*m_wallet, m_wallet_file);
@@ -1290,7 +1290,7 @@ bool simple_wallet::process_command(const std::vector<std::string> &args) {
 }
 
 void simple_wallet::printConnectionError() const {
-  fail_msg_writer() << "The wallet failed to connect to the B2B daemon (" << m_daemon_address << ").";
+  fail_msg_writer() << "The wallet failed to connect to the " << COIN_SYMBOL << " daemon (" << m_daemon_address << ").";
 }
 
 
@@ -1379,22 +1379,22 @@ int main(int argc, char* argv[]) {
  	
     //runs wallet with rpc interface
     if (!command_line::has_arg(vm, arg_wallet_file)) {
-      logger(ERROR, BRIGHT_RED) << "B2B wallet file not set.";
+      logger(ERROR, BRIGHT_RED) << COIN_SYMBOL << " wallet file not set.";
       return 1;
     }
 
     if (!command_line::has_arg(vm, arg_daemon_address)) {
-      logger(ERROR, BRIGHT_RED) << "B2B daemon address not set.";
+      logger(ERROR, BRIGHT_RED) << COIN_SYMBOL << " daemon address not set.";
       return 1;
     }
 
     if (!command_line::has_arg(vm, arg_password)) {
-      logger(ERROR, BRIGHT_RED) << "B2B wallet password not set.";
+      logger(ERROR, BRIGHT_RED) << COIN_SYMBOL << " wallet password not set.";
       return 1;
     }
 
 	  if (command_line::has_arg(vm, Tools::wallet_rpc_server::arg_rpc_password)) {
- 	    logger(INFO, BRIGHT_GREEN) << "B2B daemon started in RPC password mode.";
+ 	    logger(INFO, BRIGHT_GREEN) << COIN_SYMBOL << " daemon started in RPC password mode.";
  	  }
     
     std::string wallet_file = command_line::get_arg(vm, arg_wallet_file);
@@ -1409,7 +1409,7 @@ int main(int argc, char* argv[]) {
 
     if (!daemon_address.empty()) {
       if (!parseUrlAddress(daemon_address, daemon_host, daemon_port)) {
-        logger(ERROR, BRIGHT_RED) << "Failed to parse the B2B daemon address: " << daemon_address;
+        logger(ERROR, BRIGHT_RED) << "Failed to parse the " << COIN_SYMBOL << " daemon address: " << daemon_address;
         return 1;
       }
     }
@@ -1431,19 +1431,19 @@ int main(int argc, char* argv[]) {
     try  {
       walletFileName = ::tryToOpenWalletOrLoadKeysOrThrow(logger, wallet, wallet_file, wallet_password);
 
-      logger(INFO) << "\n\nAvailable balance: " << currency.formatAmount(wallet->actualBalance()) << " B2B\n" <<
-      "Locked amount: " << currency.formatAmount(wallet->pendingBalance()) << " B2B\n";
+      logger(INFO) << "\n\nAvailable balance: " << currency.formatAmount(wallet->actualBalance()) << " " << COIN_SYMBOL << "\n" <<
+      "Locked amount: " << currency.formatAmount(wallet->pendingBalance()) << " " << COIN_SYMBOL << "\n";
 
       logger(INFO, BRIGHT_GREEN) << "Loaded ok";
     } catch (const std::exception& e)  {
-      logger(ERROR, BRIGHT_RED) << "The B2B wallet initialize failed: " << e.what();
+      logger(ERROR, BRIGHT_RED) << "The " << COIN_SYMBOL << " wallet initialize failed: " << e.what();
       return 1;
     }
 
     Tools::wallet_rpc_server wrpc(dispatcher, logManager, *wallet, *node, currency, walletFileName);
 
     if (!wrpc.init(vm)) {
-      logger(ERROR, BRIGHT_RED) << "Failed to initialize the B2B wallet rpc server";
+      logger(ERROR, BRIGHT_RED) << "Failed to initialize the " << COIN_SYMBOL << " wallet rpc server";
       return 1;
     }
 
@@ -1451,16 +1451,16 @@ int main(int argc, char* argv[]) {
       wrpc.send_stop_signal();
     });
 
-    logger(INFO) << "Starting the B2B wallet rpc server";
+    logger(INFO) << "Starting the " << COIN_SYMBOL << " wallet rpc server";
     wrpc.run();
-    logger(INFO) << "Stopped the B2B wallet rpc server";
+    logger(INFO) << "Stopped the " << COIN_SYMBOL << " wallet rpc server";
     
     try {
-      logger(INFO) << "Storing the B2B wallet...";
+      logger(INFO) << "Storing the " << COIN_SYMBOL << " wallet...";
       CryptoNote::WalletHelper::storeWallet(*wallet, walletFileName);
       logger(INFO, BRIGHT_GREEN) << "Stored ok";
     } catch (const std::exception& e) {
-      logger(ERROR, BRIGHT_RED) << "Failed to store the B2B wallet: " << e.what();
+      logger(ERROR, BRIGHT_RED) << "Failed to store the " << COIN_SYMBOL << " wallet: " << e.what();
       return 1;
     }
   } else {
@@ -1468,7 +1468,7 @@ int main(int argc, char* argv[]) {
     CryptoNote::simple_wallet wal(dispatcher, currency, logManager);
     
     if (!wal.init(vm)) {
-      logger(ERROR, BRIGHT_RED) << "Failed to initialize the B2B wallet"; 
+      logger(ERROR, BRIGHT_RED) << "Failed to initialize the " << COIN_SYMBOL << " wallet"; 
       return 1; 
     }
 
@@ -1483,9 +1483,9 @@ int main(int argc, char* argv[]) {
     wal.run();
 
     if (!wal.deinit()) {
-      logger(ERROR, BRIGHT_RED) << "Failed to close the B2B wallet";
+      logger(ERROR, BRIGHT_RED) << "Failed to close the " << COIN_SYMBOL << " wallet";
     } else {
-      logger(INFO) << "The B2B wallet closed";
+      logger(INFO) << "The " << COIN_SYMBOL << " wallet closed";
     }
   }
   return 1;

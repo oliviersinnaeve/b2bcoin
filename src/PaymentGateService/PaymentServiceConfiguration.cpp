@@ -33,6 +33,9 @@ Configuration::Configuration() {
   registerService = false;
   unregisterService = false;
   containerPassword = "";
+  secretSpendKey = "";
+  secretViewKey = "";
+  mnemonicSeed = "";
   logFile = "walletd.log";
   testnet = false;
   printAddresses = false;
@@ -51,6 +54,9 @@ void Configuration::initOptions(boost::program_options::options_description& des
       ("container-file,w", po::value<std::string>(), "container file")
       ("container-password,p", po::value<std::string>(), "container password")
       ("generate-container,g", "generate new container file with one wallet and exit")
+      ("spend-key", po::value<std::string>(), "Generate a wallet container with this secret spend key")
+      ("view-key", po::value<std::string>(), "Generate a wallet container with this secret view key")
+      ("mnemonic-seed", po::value<std::string>(), "generate a container with this mnemonic seed")
       ("daemon,d", "run as daemon in Unix or as service in Windows")
 #ifdef _WIN32
       ("register-service", "register service and exit (Windows only)")
@@ -119,6 +125,24 @@ void Configuration::init(const boost::program_options::variables_map& options) {
     generateNewContainer = true;
   }
 
+  if (options.count("spend-key") != 0) {
+    secretSpendKey = options["spend-key"].as<std::string>();
+  }
+
+  if (options.count("view-key") != 0) {
+    secretViewKey = options["view-key"].as<std::string>();
+  }
+
+  if (options.count("mnemonic-seed") != 0) {
+    if (!generateNewContainer) {
+      throw ConfigurationError("generate-container parameter is required");
+    }
+    else if (options.count("spend-key") != 0 || options.count("view-key") != 0) {
+      throw ConfigurationError("Cannot specify import via both mnemonic seed and private keys");
+    }
+    mnemonicSeed = options["mnemonic-seed"].as<std::string>();
+  }
+  
   if (options.count("address") != 0) {
     printAddresses = true;
   }
