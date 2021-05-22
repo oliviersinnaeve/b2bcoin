@@ -1161,6 +1161,12 @@ std::error_code WalletService::estimateFusion(uint64_t threshold, const std::vec
   return std::error_code();
 }
 
+std::error_code WalletService::generatePaymentId(std::string& paymentId) {
+  logger(Logging::INFO, Logging::BRIGHT_WHITE) << "Generating payment id";
+  paymentId = Common::podToHex(Crypto::rand<Crypto::Hash>());
+  return std::error_code();
+}
+
 void WalletService::refresh() {
   try {
     logger(Logging::DEBUGGING) << "Refresh is started";

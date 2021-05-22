@@ -353,4 +353,11 @@ void EstimateFusion::Response::serialize(CryptoNote::ISerializer& serializer) {
   serializer(totalOutputCount, "totalOutputCount");
 }
 
+void GeneratePaymentId::Request::serialize(CryptoNote::ISerializer& /*serializer*/) {
+}
+
+void GeneratePaymentId::Response::serialize(CryptoNote::ISerializer& serializer) {
+  serializer(paymentId, "paymentId");
+}
+
 }

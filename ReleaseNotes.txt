@@ -1,3 +1,7 @@
+Release notes 2.2.0
+- Added RPC method to generate and return a random Payment ID for walletd
+    (new method: generatePaymentId)
+
 Release notes 2.1.0
 - Added generate-container from the private spend and view keys in walletd
 - Added Json RPC command /amount to the daemon

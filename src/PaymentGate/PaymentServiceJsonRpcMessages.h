@@ -425,4 +425,16 @@ struct EstimateFusion {
   };
 };
 
+struct GeneratePaymentId {
+  struct Request {
+    void serialize(CryptoNote::ISerializer& serializer);
+  };
+
+  struct Response {
+    std::string paymentId;
+
+    void serialize(CryptoNote::ISerializer& serializer);
+  };
+};
+
 } //namespace PaymentService
